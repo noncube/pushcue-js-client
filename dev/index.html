@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style type="text/css">
+        .test { width: 95%; border: 3px solid #000; padding: 10px; margin-bottom: 20px; }
+
+    </style>
+</head>
+<body>
+<div class='test'>
+<pre>pc.auth({username: 'username', password: 'password'}, cb)</pre>
+<div id="auth_result"></div>
+</div>
+
+<div class='test'>
+    <pre>pc.uploads.all(cb)</pre>
+    <div id="get_upload_result"></div>
+</div>
+
+<script type="text/javascript" src="../lib/xhr2lib.min.js"></script>
+<script type="text/javascript" src="../pushcue.js"></script>
+<script type="text/javascript" src="prettyprint.js"></script>
+
+<script type="text/javascript">
+    var username = 'your_user_here', password = 'password';
+
+    function afterAuth() {
+        pushcue.uploads.all(function(err, res) {
+            if(!err) {
+                document.getElementById('get_upload_result').appendChild(prettyPrint(res));
+            } else {
+                document.getElementById('get_upload_result').appendChild(prettyPrint(err));
+            }
+        });
+    }
+
+    pushcue.auth({username: username, password: password},
+        function(err, res){
+            if(!err) {
+                document.getElementById('auth_result').innerHTML = 'success';
+                afterAuth();
+            } else {
+                var tbl = prettyPrint( err );
+                document.getElementById('auth_result').appendChild(tbl);
+            }
+        }
+    );
+</script>
+
+</body>
+
+</html>
