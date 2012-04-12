@@ -99,7 +99,7 @@
                 settings.headers['PC-ID'] = user['PC-ID'];
                 settings.headers['PC-TOKEN'] = user['PC-TOKEN'];
 
-            } else {
+            } else if (opts.auth !== 'maybe') {
                 return callback(new PushcueError({
                     code: 'missing_auth',
                     message: 'You must be logged in for this action.'
@@ -165,14 +165,14 @@
         // Requires opts.username && opts.password && opts.email && opts.invite && callback
         create: function(opts, callback) {
             if (!opts || !callback)
-                return callback(new PushcueError({
+                throw new PushcueError({
                     code: 'missing_param',
                     message: 'Missing opts or callback.',
                     data: {
                         opts: opts,
                         callback: callback ? true : undefined
                     }
-                }));
+                });
 
             if (!opts.username || !opts.password || !opts.email || !opts.invite)
                 return callback(new PushcueError({
@@ -226,7 +226,7 @@
 
     pc.uploads = {
         // Get current user's uploads
-        'all': function(page, callback) {
+        all: function(page, callback) {
             if (typeof page === 'function') {
                 callback = page;
                 page = 1;
@@ -245,6 +245,101 @@
             _request({
                 path: '/uploads',
                 method: 'GET',
+                auth: true
+            }, callback);
+        },
+
+        'get': function(opts, callback) {
+            if (!callback || !opts.id)
+                throw new PushcueError({
+                   code: 'missing_param',
+                   message: 'Missing id or callback.',
+                   data: {
+                       id: opts.id,
+                       callback: callback ? true : undefined
+                   }
+               });
+
+            var settings = {
+                path: '/uploads/' + opts.id,
+                method: 'GET',
+                auth: 'maybe'
+            };
+
+            if (opts.password) { // support for 3rd party users opening passworded file
+                settings.method = 'POST';
+                settings.data = {password: opts.password};
+            }
+
+            _request(settings, callback);
+        },
+
+        download: function(opts, callback) { // on success, return should be raw file
+            if (!callback || !opts.id)
+                throw new PushcueError({
+                   code: 'missing_param',
+                   message: 'Missing id or callback.',
+                   data: {
+                       id: opts.id,
+                       callback: callback ? true : undefined
+                   }
+               });
+
+            var settings = {
+                path: '/uploads/' + opts.id + '/download',
+                method: 'GET',
+                auth: 'maybe'
+            };
+
+            if (opts.password) { // support for 3rd party users opening passworded file
+                settings.method = 'POST';
+                settings.data = {password: opts.password};
+            }
+
+            _request(settings, callback);
+        },
+
+        update: function(opts, callback) {
+            if (!callback || !opts.id)
+                throw new PushcueError({
+                   code: 'missing_param',
+                   message: 'Missing id or callback.',
+                   data: {
+                       id: opts.id,
+                       callback: callback ? true : undefined
+                   }
+               });
+
+            if (!opts.password) {
+                return callback(new PushcueError({
+                    code: 'missing_param',
+                    message: 'New password is required.',
+                    data: {password: opts.password}
+                }));
+            }
+
+            _request({
+                path: '/uploads/' + opts.id,
+                method: 'PUT',
+                auth: true,
+                data: { password: opts.password }
+            }, callback);
+        },
+        del: function(id, callback) {
+
+            if (!id || !callback)
+                throw new PushcueError({
+                   code: 'missing_param',
+                   message: 'Missing id or callback.',
+                   data: {
+                       id: id,
+                       callback: callback ? true : undefined
+                   }
+               });
+
+            _request({
+                path: '/uploads/' + id,
+                method: 'DELETE',
                 auth: true
             }, callback);
         }
