@@ -107,6 +107,11 @@
             }
         }
 
+        if (opts.file) { // <File> or <Blob> object
+            settings.headers['X-File-Name'] = opts.file.name;
+            settings.data = opts.file;
+        }
+
         $xhr.ajax(settings);
     };
 
@@ -246,6 +251,27 @@
                 path: '/uploads',
                 method: 'GET',
                 auth: true
+            }, callback);
+        },
+
+        create: function(file, callback) {
+            if (!callback || !file)
+                throw new PushcueError({
+                   code: 'missing_param',
+                   message: 'Missing file or callback.',
+                   data: {
+                       file: !!file,
+                       callback: callback ? true : undefined
+                   }
+               });
+
+            // file needs to be instanceof File
+
+            _request({
+                path: '/uploads',
+                method: 'POST',
+                auth: true,
+                file: file
             }, callback);
         },
 
