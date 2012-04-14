@@ -8,7 +8,7 @@
 </head>
 <body>
 <div class='test'>
-<pre>pc.auth({username: 'username', password: 'password'}, cb)</pre>
+<pre>pc.auth({username: 'furycodes', password: 'meowmeow'}, cb)</pre>
 <div id="auth_result"></div>
 </div>
 
@@ -22,12 +22,13 @@
 <script type="text/javascript" src="prettyprint.js"></script>
 
 <script type="text/javascript">
-    var username = 'your_user_here', password = 'password';
+    var username = 'furycodes', password = 'meowmeow';
 
     function afterAuth() {
         pushcue.uploads.all(function(err, res) {
             if(!err) {
-                document.getElementById('get_upload_result').appendChild(prettyPrint(res));
+                document.getElementById('get_upload_result').innerHTML = JSON.stringify(res);
+//                document.getElementById('get_upload_result').appendChild(prettyPrint(res));
             } else {
                 document.getElementById('get_upload_result').appendChild(prettyPrint(err));
             }

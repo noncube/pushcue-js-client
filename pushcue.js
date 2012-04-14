@@ -117,6 +117,9 @@
 
     // Main public API
     //------------------------------------------------------------------------/
+    pc.isAuthenticated = function () {
+        return !!user['PC-TOKEN'];
+    };
 
     // Authenticate a user to the service.
     // Requires opts.username && opts.password && callback
@@ -163,6 +166,28 @@
             if (!err) user = {};
             callback(err);
         });
+    };
+
+    pc.requestInvitation = function(email, callback) {
+        if (!callback)
+            throw new PushcueError({
+               code: 'missing_param',
+               message: 'Missing callback.',
+               data: {
+                   callback: undefined
+               }
+           });
+
+        if (!email)
+            return callback(new PushcueError({
+                code: 'missing_param',
+                message: 'Missing a required parameter.',
+                data: {
+                    email: email
+                }
+            }));
+
+        _request({ path: '/requests', method: 'post' }, callback());
     };
 
     pc.users = {
