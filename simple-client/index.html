@@ -53,7 +53,7 @@
 </div>
 
 <script type="text/template" id="register_tmpl">
-    <section id="register" class="first">
+    <section>
         <h2>Please register</h2>
         <form action="#">
             <p><input type="text" placeholder="email"/></p>
@@ -66,8 +66,11 @@
 </script>
 <!-- should these two be combined? <login or register> -->
 <script type="text/template" id="login_tmpl">
-    <section id="login">
+    <section>
         <h2>Please login</h2>
+        [% if (this.code) { %]
+        <p class="error">Invalid username/password.</p>
+        [% } %]
         <form action="#">
             <p><input type="text" placeholder="username" /></p>
             <p><input type="password" placeholder="password" /></p>
@@ -77,7 +80,7 @@
 </script>
 
 <script type="text/template" id="upload_tmpl">
-    <section id="upload">
+    <section>
         <h2>Uplad a file</h2>
         <form action="#">
             <p><input type="file"></p>
@@ -87,15 +90,16 @@
 </script>
 
 <script type="text/template" id="files_tmpl">
-    <section id="files">
+    <section>
         <h2>Your Files</h2>
-        <% for(var i=0; i<uploads.length; i++) {%>
-        <!-- this link should download via js, for now just do the raw download -->
-        <p>
-            <a href="/uploads/<%= uploads[i]._id %>/download"><%= uploads[i].name %></a>
-            <%= uploads[i].view_count %> views <%= uploads[i].download_count %> downloads
-        </p>
-        <% } %>
+        <div class="files">
+        [% for(var i=0; i<uploads.length; i++) { %]
+            <p>
+                <a id="file-[%= uploads[i]._id %]">[%= uploads[i].name %]</a>
+                [%= uploads[i].view_count %] views [%= uploads[i].download_count %] downloads
+            </p>
+        [% } %]
+        </div>
         <h2>Your Inboxes</h2>
         <p><a href="#">Inbox Name</a> received xx uploads</p>
         <p><a href="#">Inbox Name</a> received xx uploads</p>
@@ -103,8 +107,9 @@
 </script>
 
 <script type="text/template" id="detail_tmpl">
-    <section id="detail">
-        <h2>Details for Filename</h2>
+    <section>
+        <h2>Details for [%= this.name %]</h2>
+        <!-- this link should download via js, for now just do the raw download -->
         <p><a href="#">Download</a></p>
         <!--<p><a href="#">Email</a></p>-->
         <!--<p><a href="#">Copy Link</a></p>-->

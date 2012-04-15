@@ -285,6 +285,9 @@ footer small {
     padding: 30px; }
 
 .simple #main section {
-    border-bottom: 1px solid #cecece; }
-.simple #main section.first {
+    border-bottom: 1px solid #cecece;
     border-top: 1px solid #cecece; }
+
+.files a {
+    cursor: pointer;
+}

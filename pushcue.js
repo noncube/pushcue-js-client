@@ -257,6 +257,7 @@
     pc.uploads = {
         // Get current user's uploads
         all: function(page, callback) {
+            page = page || 1;
             if (typeof page === 'function') {
                 callback = page;
                 page = 1;
