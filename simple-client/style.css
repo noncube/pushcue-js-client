@@ -288,6 +288,6 @@ footer small {
     border-bottom: 1px solid #cecece;
     border-top: 1px solid #cecece; }
 
-.files a {
+.files a, .link {
     cursor: pointer;
 }

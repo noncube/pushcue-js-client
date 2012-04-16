@@ -80,7 +80,7 @@ $(document).ready(function(){
                     if (!err) {
                         view('login');
                     } else {
-                        console.log(err);
+                        console.error(err);
                         view('register', err);
                     }
                 });
@@ -103,10 +103,24 @@ $(document).ready(function(){
             pushcue.uploads.get(id, function(err, res) {
                 if (!err) {
                     util.render('detail_tmpl', res);
-                    console.log(res);
+                    $main.on('click.pushcue', "div.details p a.delete", function() {
+                        var id = $main.find('.detail').attr('id').substring(7);
+                        view('delete_upload', id);
+                    });
                 } else {
                     // todo: better errors, possible 404, 500, or notauthorized (ask for password)
-                    console.log(err);
+                    console.error(err);
+                }
+            });
+        },
+
+        delete_upload: function(id) {
+            pushcue.uploads.del(id, function(err) {
+                if (!err) {
+                    view('list');
+                } else {
+                    // todo: better errors, possible 404, 500, or notauthorized
+                    console.error(err);
                 }
             });
         }

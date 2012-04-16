@@ -126,11 +126,13 @@
 <script type="text/template" id="detail_tmpl">
     <section>
         <h2>Details for [%= this.name %]</h2>
-        <p><a href="[%= api_url %]/uploads/[%= this._id %]/download/[%= this.name %]">Download</a></p>
-        <!--<p><a href="#">Email</a></p>-->
-        <!--<p><a href="#">Copy Link</a></p>-->
-        <p><a href="#">Add Password</a></p>
-        <p><a href="#">Delete</a></p>
+        <div class="details" id="detail-[%= uploads[i]._id %]">
+            <p><a href="[%= api_url %]/uploads/[%= this._id %]/download/[%= this.name %]">Download</a></p>
+            <!--<p><a href="#">Email</a></p>-->
+            <!--<p><a href="#">Copy Link</a></p>-->
+            <p><a href="#">Add Password</a></p>
+            <p><a class="delete link">Delete</a></p>
+        </div>
     </section>
 </script>
 <script type="text/javascript" src="lib/jquery-1.7.2.min.js"></script>
