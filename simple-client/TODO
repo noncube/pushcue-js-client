@@ -2,3 +2,7 @@
 * back/forward button fix/browser history
 * look into possibly using some form of sessions to save tokens
     (sessid cookies, maybe sessionStorage/localStorage)
+
+* hook up global view links (home/logo, settings, logout)
+* where to register? (should this be on the login?)
+* where to request an invite?
