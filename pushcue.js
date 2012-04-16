@@ -2,7 +2,7 @@
 //
 // Requires xhr2lib
 // https://github.com/p-m-p/xhr2-lib
-(function(main){ if($xhr && $xhr.supported()){
+(function(main){ if(window.$xhr && $xhr.supported()){
     var pc = { supported: true }, // Public API
         user = {}; // hold user auth
 
@@ -14,6 +14,9 @@
     conf.url = function(secure_required){
         return 'http' + ( (secure_required || this.secure) ? 's' : '') +
                 '://' + this.host + ':' + this.port;
+    };
+    pc.url = function() {
+        return conf.url.call(conf);
     };
 
     // Override config if necessary
@@ -218,6 +221,9 @@
 
             _request({ path: '/users', method: 'POST', data: opts }, callback);
         },
+        update: function(opts, callback) {
+            //TODO
+        },
         // Get current user
         'get': function(callback) {
             if (!callback)
@@ -330,15 +336,17 @@
             if (!callback || !opts.id)
                 throw new PushcueError({
                    code: 'missing_param',
-                   message: 'Missing id or callback.',
+                   message: 'Missing id, filename, or callback.',
                    data: {
                        id: opts.id,
+                       filename: opts.filename,
                        callback: callback ? true : undefined
                    }
                });
+            var filename = opts.filename || '';
 
             var settings = {
-                path: '/uploads/' + opts.id + '/download',
+                path: '/uploads/' + opts.id + '/download/' + filename,
                 method: 'GET',
                 auth: 'maybe'
             };

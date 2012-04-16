@@ -56,11 +56,11 @@
     <section>
         <h2>Please register</h2>
         <form action="#">
-            <p><input type="text" placeholder="email"/></p>
-            <p><input type="text" placeholder="username" /></p>
-            <p><input type="password" placeholder="password" /></p>
-            <p><input type="text" placeholder="key" /></p>
-            <p><input  type="submit" value="login" /></p>
+            <p><input class="r_email" type="text" placeholder="email"/></p>
+            <p><input class="r_user" type="text" placeholder="username" /></p>
+            <p><input class="r_pass" type="password" placeholder="password" /></p>
+            <p><input class="r_key" type="text" placeholder="key" /></p>
+            <p><input type="submit" value="login" /></p>
         </form>
     </section>
 </script>
@@ -76,6 +76,23 @@
             <p><input type="password" placeholder="password" /></p>
             <p><input  type="submit" value="login" /></p>
         </form>
+    </section>
+</script>
+
+<script type="text/template" id="request_tmpl">
+    <section>
+        <h2>Request an invitation</h2>
+    [% if (!this.success) {%]
+        [% if (this.code) { %]
+        <p class="error">Invalid email address.</p>
+        [% } %]
+        <form action="#">
+            <p><input type="text" placeholder="email" /></p>
+            <p><input  type="submit" value="login" /></p>
+        </form>
+    [% } else { %]
+        <p>Success! We'll send you an invitation as soon as we're ready for you.</p>
+    [% } %]
     </section>
 </script>
 
@@ -109,8 +126,7 @@
 <script type="text/template" id="detail_tmpl">
     <section>
         <h2>Details for [%= this.name %]</h2>
-        <!-- this link should download via js, for now just do the raw download -->
-        <p><a href="#">Download</a></p>
+        <p><a href="[%= api_url %]/uploads/[%= this._id %]/download/[%= this.name %]">Download</a></p>
         <!--<p><a href="#">Email</a></p>-->
         <!--<p><a href="#">Copy Link</a></p>-->
         <p><a href="#">Add Password</a></p>
