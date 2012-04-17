@@ -49,17 +49,29 @@ $(document).ready(function(){
         },
         clearNav: function() {
             $nav.html('');
+        },
+
+        storeAuth: function() {
+            sessionStorage.pushcue = JSON.stringify(pushcue.getUserAuth());
+        },
+
+        restoreAuth: function() {
+            var auth = sessionStorage.pushcue;
+            if (auth) {
+                pushcue.setUserAuth(JSON.parse(auth));
+            }
+            return !!auth;
         }
 
     };
 
     views = {
-        login: {
+        login: { // also handles registration
             fn: function(err) {
                 util.clearNav();
                 util.render('login_tmpl', err);
 
-                $main.on('submit.pushcue', "form", function() {
+                $main.on('submit.pushcue', "form.login", function() {
                     var $form = $(this),
                         data = {
                             username: $form.find('[type="text"]').val(),
@@ -67,12 +79,33 @@ $(document).ready(function(){
                         };
                     pushcue.auth(data, function(err) {
                         if (!err) {
+                            util.storeAuth();
                             view('list');
                         } else {
+                            err.form = 'login';
                             view('login',err);
                         }
                     });
                     return false;
+                });
+                $main.on('submit.pushcue', "form.register", function() {
+                    var $form = $(this),
+                        data = {
+                            username: $form.find('.r_user').val(),
+                            password: $form.find('.r_pass').val(),
+                            email: $form.find('.r_email').val(),
+                            invite: $form.find('.r_key').val()
+                        };
+                    pushcue.users.create(data, function(err) {
+                        if (err)
+                            err.form = 'register';
+                        err = err || {success: true};
+                        view('login', err);
+                    });
+                    return false;
+                });
+                $main.on('click.pushcue', "a.go-key", function() {
+                    view('request_invitation');
                 });
             }
         },
@@ -101,31 +134,6 @@ $(document).ready(function(){
             fn: function() {
                 pushcue.deAuth(function() {
                     view('login');
-                });
-            }
-        },
-
-        register: {
-            fn: function(err){
-                util.render('register_tmpl', err);
-
-                $main.on('submit.pushcue', "form", function() {
-                    var $form = $(this),
-                        data = {
-                            username: $form.find('.r_user').val(),
-                            password: $form.find('.r_pass').val(),
-                            email: $form.find('.r_email').val(),
-                            invite: $form.find('.r_key').val()
-                        };
-                    pushcue.users.create(data, function(err) {
-                        if (!err) {
-                            view('login');
-                        } else {
-                            console.error(err);
-                            view('register', err);
-                        }
-                    });
-                    return false;
                 });
             }
         },
@@ -200,10 +208,12 @@ $(document).ready(function(){
         }
     };
 
-
-
-    // TODO: look into possibly using sessionStorage to save tokens
     init();
-    view('login');
+
+    if (util.restoreAuth()) {
+        view('list');
+    } else {
+        view('login');
+    }
 
 });

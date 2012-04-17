@@ -124,6 +124,15 @@
         return !!user['PC-TOKEN'];
     };
 
+    pc.getUserAuth = function() {
+        return { 'PC-ID': user['PC-ID'], 'PC-TOKEN': user['PC-TOKEN'] };
+    };
+
+    pc.setUserAuth = function(auth) {
+        user['PC-ID'] = auth['PC-ID'];
+        user['PC-TOKEN'] = auth['PC-TOKEN'];
+    };
+
     // Authenticate a user to the service.
     // Requires opts.username && opts.password && callback
     pc.auth = function(opts, callback) {

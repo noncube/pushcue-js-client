@@ -309,3 +309,14 @@ footer small {
 body.authenticated .onlyauth {
     visibility: visible !important;
 }
+
+div.first {
+    margin-left: 0;
+}
+
+.col {
+    display: inline-block;
+    height: 100%;
+    vertical-align: top;
+    margin-left: 30px;
+}

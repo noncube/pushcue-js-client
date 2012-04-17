@@ -53,31 +53,38 @@
     </footer>
 </div>
 
-<script type="text/template" id="register_tmpl">
-    <section>
-        <h2>Please register</h2>
-        <form action="">
-            <p><input class="r_email" type="text" placeholder="email"/></p>
-            <p><input class="r_user" type="text" placeholder="username" /></p>
-            <p><input class="r_pass" type="password" placeholder="password" /></p>
-            <p><input class="r_key" type="text" placeholder="key" /></p>
-            <p><input type="submit" value="login" /></p>
-        </form>
-    </section>
-</script>
-<!-- should these two be combined? <login or register> -->
 <script type="text/template" id="login_tmpl">
     <section>
-        <h2>Please login</h2>
-        [% if (this.code) { %]
-        <p class="error">Invalid username/password.</p>
-        [% } %]
-        <form action="">
-            <p><input type="text" placeholder="username" /></p>
-            <p><input type="password" placeholder="password" /></p>
-            <p><input  type="submit" value="login" /></p>
-        </form>
+        <div class="col first">
+            <h2>Please login</h2>
+            [% if (this.form === 'login') { %]
+            <p class="error">Invalid username/password.</p>
+            [% } %]
+            <form action="" class="login">
+                <p><input type="text" placeholder="username" /></p>
+                <p><input type="password" placeholder="password" /></p>
+                <p><input  type="submit" value="login" /></p>
+            </form>
+        </div>
+        <div class="col">
+            <h2>-or-</h2>
+        </div>
+        <div class="col">
+            <h2>Please register</h2>
+            [% if (this.success) { %]
+            <p>Success! You may now use the form on the left to login.</p>
+            [% } else { %]
+            <form action="" class="register">
+                <p><input class="r_email" type="text" placeholder="email"/></p>
+                <p><input class="r_user" type="text" placeholder="username" /></p>
+                <p><input class="r_pass" type="password" placeholder="password" /></p>
+                <p><input class="r_key" type="text" placeholder="key" /></p>
+                <p><input type="submit" value="register" /> (No key? <a class="go-key">click here</a>)</p>
+            </form>
+            [% } %]
+        </div>
     </section>
+
 </script>
 
 <script type="text/template" id="request_tmpl">
