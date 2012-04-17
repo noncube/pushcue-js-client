@@ -116,6 +116,9 @@
 
 <script type="text/template" id="files_tmpl">
     <section>
+        <form action="" class="file-upload">
+            Upload: <input type="file" class="file-field"><input type="submit" value="upload">
+        </form>
         <h2>Your Files</h2>
         <div class="files">
         [% for(var i=0; i<uploads.length; i++) { %]

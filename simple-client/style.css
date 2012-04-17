@@ -320,3 +320,12 @@ div.first {
     vertical-align: top;
     margin-left: 30px;
 }
+.file-upload {
+    margin-top: 5px;
+}
+.file-upload input, .file-upload button {
+    vertical-align: middle;
+    text-align: center;
+    height: 25px;
+    padding: 5px;
+}

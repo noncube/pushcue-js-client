@@ -111,7 +111,7 @@
         }
 
         if (opts.file) { // <File> or <Blob> object
-            settings.headers['X-File-Name'] = opts.file.name;
+            //settings.headers['X-File-Name'] = opts.file.name;
             settings.data = opts.file;
         }
 
@@ -295,13 +295,13 @@
             }, callback);
         },
 
-        create: function(file, callback) {
-            if (!callback || !file)
+        create: function(opts, callback) {
+            if (!callback || !opts.file)
                 throw new PushcueError({
                    code: 'missing_param',
                    message: 'Missing file or callback.',
                    data: {
-                       file: !!file,
+                       file: !!opts.file,
                        callback: callback ? true : undefined
                    }
                });
@@ -312,7 +312,9 @@
                 path: '/uploads',
                 method: 'POST',
                 auth: true,
-                file: file
+                file: opts.file,
+                progress: opts.progress,
+                timeout: 0
             }, callback);
         },
 

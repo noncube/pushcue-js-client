@@ -31,44 +31,62 @@ $(document).ready(function(){
     };
 
     util = {
-        clear: function() { // clear events
+        clear: function(file) { // clear events
             $main.off('.pushcue');
 
-            $main.html('<p>Loading...</p>');
+            if (!file) {
+                $main.html('<p>Loading...</p>');
+            } else {
+                $main.html('<p>Uploading - ' +
+                    '<progress id="file-progress" max="100" value="0"></progress>' +
+                    '<span id="progress-percentage">0%</span></p>');
+            }
         },
         render: function(name, data) {
             data = data || {};
             data.api_url = api_url;
             new EJS({element: name}).update('content', data);
         },
-        setNav: function(name, displayName)  {
-            $nav.html('<a class="go-'+name + '">' + displayName + '</a> ');
-        },
-        addNav: function(name, displayName)  {
-            $nav.append(': <a class="go-'+name + '">' + displayName + '</a> ');
-        },
-        clearNav: function() {
-            $nav.html('');
+
+        progress: function(x) {
+            $main.find('#file-progress').attr('value',x);
+            $main.find('#progress-percentage').text(x.toString() + '%');
+            console.log(x);
         },
 
-        storeAuth: function() {
-            sessionStorage.pushcue = JSON.stringify(pushcue.getUserAuth());
-        },
-
-        restoreAuth: function() {
-            var auth = sessionStorage.pushcue;
-            if (auth) {
-                pushcue.setUserAuth(JSON.parse(auth));
+        nav: {
+            set: function(name, displayName)  {
+                $nav.html('<a class="go-'+name + '">' + displayName + '</a> ');
+            },
+            add: function(name, displayName)  {
+                $nav.append(': <a class="go-'+name + '">' + displayName + '</a> ');
+            },
+            clear: function() {
+                $nav.html('');
             }
-            return !!auth;
-        }
+        },
 
+        auth: {
+            save: function() {
+                sessionStorage.pushcue = JSON.stringify(pushcue.getUserAuth());
+            },
+            load: function() {
+                var auth = sessionStorage.pushcue;
+                if (auth) {
+                    pushcue.setUserAuth(JSON.parse(auth));
+                }
+                return !!auth;
+            },
+            remove: function() {
+                delete sessionStorage.pushcue;
+            }
+        }
     };
 
     views = {
         login: { // also handles registration
             fn: function(err) {
-                util.clearNav();
+                util.nav.clear();
                 util.render('login_tmpl', err);
 
                 $main.on('submit.pushcue', "form.login", function() {
@@ -79,7 +97,7 @@ $(document).ready(function(){
                         };
                     pushcue.auth(data, function(err) {
                         if (!err) {
-                            util.storeAuth();
+                            util.auth.save();
                             view('list');
                         } else {
                             err.form = 'login';
@@ -112,7 +130,7 @@ $(document).ready(function(){
 
         request_invitation: {
             fn: function(result) {
-                util.setNav('login', 'Login or Register');
+                util.nav.set('login', 'Login or Register');
                 util.render('request_tmpl', result);
 
                 if (!result || !result.success) {
@@ -133,6 +151,7 @@ $(document).ready(function(){
             requireAuth: true,
             fn: function() {
                 pushcue.deAuth(function() {
+                    util.auth.remove();
                     view('login');
                 });
             }
@@ -141,7 +160,7 @@ $(document).ready(function(){
         list: {
             requireAuth: true,
             fn: function(page) {
-                util.clearNav();
+                util.nav.clear();
 
                 pushcue.uploads.all(page, function(err, res) {
                     if (!err) {
@@ -150,6 +169,25 @@ $(document).ready(function(){
                             var id = $(this).attr('id').substring(5);
                             view('display_upload', {id: id});
                         });
+                        $main.on('submit.pushcue', "form", function() {
+                            var $form = $(this),
+                                file = $form.find('.file-field')[0].files[0];
+
+                            util.clear(true);
+                            var fd = new FormData();
+                            fd.append('file', file);
+
+                            pushcue.uploads.create({
+                                    file: fd,
+                                    progress: util.progress
+                                },
+                                function(err) {
+                                    if (err) console.log(err);
+                                    view('list');
+                                }
+                            );
+                            return false;
+                        });
                     }
                 });
             }
@@ -157,7 +195,7 @@ $(document).ready(function(){
 
         display_upload: {
             fn: function(id) {
-                util.setNav('list', 'Home');
+                util.nav.set('list', 'Home');
 
                 pushcue.uploads.get(id, function(err, res) {
                     if (!err) {
@@ -190,27 +228,30 @@ $(document).ready(function(){
     };
 
     view = function(name, data) {
-        var authenticated = pushcue.isAuthenticated();
-        util.clear();
+        setTimeout(function() {
+            var authenticated = pushcue.isAuthenticated();
+            util.clear();
 
-        // Hide/show relevant elements based on login state (using css)
-        $page.toggleClass('authenticated', authenticated);
+            // Hide/show relevant elements based on login state (using css)
+            $page.toggleClass('authenticated', authenticated);
 
-//        TODO: will deal with this later -- window.history.state object in gecko, popstate window event in webkit
-//        history.pushState(data, 'Pushcue',
-//            window.location.protocol + '//' + document.domain + '#' + name
-//        );
+    //        TODO: will deal with this later -- window.history.state object in gecko, popstate window event in webkit
+    //        history.pushState(data, 'Pushcue',
+    //            window.location.protocol + '//' + document.domain + '#' + name
+    //        );
 
-        if (views[name].requireAuth && !authenticated) {
-            views.login.fn(data);
-        } else {
-            views[name].fn(data);
-        }
+            if (views[name].requireAuth && !authenticated) {
+                views.login.fn(data);
+            } else {
+                views[name].fn(data);
+            }
+            console.log(name + ' rendered.');
+        },10);
     };
 
     init();
 
-    if (util.restoreAuth()) {
+    if (util.auth.load()) {
         view('list');
     } else {
         view('login');
