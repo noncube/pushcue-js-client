@@ -13,11 +13,11 @@
 <body class="simple">
 <header>
     <div class="grid-container">
-        <a href="/" id="sitelogo">pushcue</a>
-        <section id="toolbar">
+        <a id="sitelogo">pushcue</a>
+        <section id="toolbar" class="onlyauth">
             <a href="/upgrade/" class="upgrade">Upgrade</a>
             <a href="/settings/" class="settings">Settings</a>
-            <a href="/signout/" class="signout">Sign Out</a>
+            <a class="signout">Sign Out</a>
         </section>
     </div>
 </header>
@@ -28,6 +28,7 @@
         <div id="content-header">
             <h1>Pushcue Simple</h1>
         </div>
+        <div id="nav"></div>
         <div id="content">
             <!-- todo: add noscript/incompatible default -->
         </div>
@@ -40,9 +41,9 @@
                 <!--<li><a href="/about/">About</a></li>-->
                 <!--<li><a href="/team/">Team</a></li>-->
                 <!--<li><a href="/app/">Mac App</a></li>-->
-                <!--<li><a href="/upgrade/">Upgrade</a></li> this should be a js-call-->
-                <!--<li><a href="/settings/">Settings</a></li> this should be a js-call-->
-                <!--<li><a href="/signout/">Sign Out</a></li> this should be a js-call-->
+                <li class="onlyauth"><a class="upgrade">Upgrade</a></li>
+                <li class="onlyauth"><a class="settings">Settings</a></li>
+                <li class="onlyauth"><a class="signout">Sign Out</a></li>
             </ul>
         </nav>
 
@@ -55,7 +56,7 @@
 <script type="text/template" id="register_tmpl">
     <section>
         <h2>Please register</h2>
-        <form action="#">
+        <form action="">
             <p><input class="r_email" type="text" placeholder="email"/></p>
             <p><input class="r_user" type="text" placeholder="username" /></p>
             <p><input class="r_pass" type="password" placeholder="password" /></p>
@@ -71,7 +72,7 @@
         [% if (this.code) { %]
         <p class="error">Invalid username/password.</p>
         [% } %]
-        <form action="#">
+        <form action="">
             <p><input type="text" placeholder="username" /></p>
             <p><input type="password" placeholder="password" /></p>
             <p><input  type="submit" value="login" /></p>
@@ -86,7 +87,7 @@
         [% if (this.code) { %]
         <p class="error">Invalid email address.</p>
         [% } %]
-        <form action="#">
+        <form action="">
             <p><input type="text" placeholder="email" /></p>
             <p><input  type="submit" value="login" /></p>
         </form>
@@ -98,8 +99,8 @@
 
 <script type="text/template" id="upload_tmpl">
     <section>
-        <h2>Uplad a file</h2>
-        <form action="#">
+        <h2>Upload a file</h2>
+        <form action="">
             <p><input type="file"></p>
             <p><input type="submit" value="upload"></p>
         </form>
@@ -126,7 +127,7 @@
 <script type="text/template" id="detail_tmpl">
     <section>
         <h2>Details for [%= this.name %]</h2>
-        <div class="details" id="detail-[%= uploads[i]._id %]">
+        <div class="details" id="detail-[%= this._id %]">
             <p><a href="[%= api_url %]/uploads/[%= this._id %]/download/[%= this.name %]">Download</a></p>
             <!--<p><a href="#">Email</a></p>-->
             <!--<p><a href="#">Copy Link</a></p>-->
@@ -138,7 +139,7 @@
 <script type="text/javascript" src="lib/jquery-1.7.2.min.js"></script>
 
 <script type="text/javascript" src="lib/ejs_production.js"></script>
-<script type="text/javascript" src="lib/xhr2lib.min.js"></script>
+<script type="text/javascript" src="lib/xhr2lib.js"></script>
 <script type="text/javascript" src="lib/pushcue.js"></script>
 
 <script type="text/javascript" src="lib/script.js"></script>
