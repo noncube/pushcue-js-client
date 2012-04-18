@@ -9,7 +9,7 @@
 
     // Configuration (private)
     //------------------------------------------------------------------------/
-    var conf = { host: 'localhost', port: 8000, secure: false };
+    var conf = { host: 'localhost', port: 8000, secure: false, chunksize: 1024*1024 /*1mb*/ };
 
     conf.url = function(secure_required){
         return 'http' + ( (secure_required || this.secure) ? 's' : '') +
@@ -74,7 +74,7 @@
     };
     var error_handler = function(callback) { // <this> is the xhr
         return function(statusText, status) {
-            callback(parseErrorResult(this.responseText, status));
+            callback.call(this, parseErrorResult(this.responseText, status));
         };
     };
 
@@ -111,7 +111,7 @@
         }
 
         if (opts.file) { // <File> or <Blob> object
-            //settings.headers['X-File-Name'] = opts.file.name;
+            settings.headers['X-File-Name'] = opts.file.name;
             settings.data = opts.file;
         }
 
@@ -307,15 +307,70 @@
                });
 
             // file needs to be instanceof File
+            var baseUrl = conf.url() + '/uploads/async',
+                baseSettings = {
+                    type: 'POST',
+                    dataType: opts.dataType || 'json',
+                    headers: {
+                        'async': 'x-pushcue',
+                        'Cache-Control': 'no-cache',
+                        'Content-Type': 'application/octet-stream'
+                    },
+                    timeout: 2000,
+                    error: error_handler(callback)
+                };
 
-            _request({
-                path: '/uploads',
-                method: 'POST',
-                auth: true,
-                file: opts.file,
-                progress: opts.progress,
-                timeout: 0
-            }, callback);
+            if (user['PC-ID'] && user['PC-TOKEN']) {
+                baseSettings.headers['PC-ID'] = user['PC-ID'];
+                baseSettings.headers['PC-TOKEN'] = user['PC-TOKEN'];
+            }
+
+            var cSize = conf.chunksize,
+                count = 0;
+
+            // recursive chunked upload
+            function xhrPart(file, start) {
+                var totalSize = file.size,
+                    end = start + cSize,
+                    last = totalSize - end <= 0;
+
+                count++;
+
+                var chunk = (file.mozSlice) ? file.mozSlice(start, end) :
+                            (file.webkitSlice) ? file.webkitSlice(start, end) :
+                            (file.slice) ? file.slice(start, cSize) :
+                            undefined;
+
+                baseSettings.url = baseUrl + '/?start=' + start;
+                baseSettings.data = chunk;
+
+                if (opts.progress)
+                    baseSettings.progress = function() {
+                        var percent = (
+                            (this.loaded + count * cSize - cSize) * 100 / totalSize
+                        ) | 0;
+                        opts.progress(percent);
+                    };
+
+                baseSettings.success = function(data) {
+                    if (!last) {
+                        xhrPart(file, end);
+                    } else {
+                        if (opts.progress) opts.progress(100);
+                        //finish it
+//                        _request({
+//                            path: '/uploads',
+//                            method: 'POST',
+//                            auth: 'maybe',
+//                            data: { async: true, file_path: data.filename }
+//                        }, callback);
+                    }
+                };
+
+                $xhr.ajax(baseSettings);
+            }
+
+            xhrPart(opts.file, 0);
         },
 
         'get': function(opts, callback) {

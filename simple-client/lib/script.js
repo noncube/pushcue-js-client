@@ -51,7 +51,6 @@ $(document).ready(function(){
         progress: function(x) {
             $main.find('#file-progress').attr('value',x);
             $main.find('#progress-percentage').text(x.toString() + '%');
-            console.log(x);
         },
 
         nav: {
@@ -170,19 +169,20 @@ $(document).ready(function(){
                             view('display_upload', {id: id});
                         });
                         $main.on('submit.pushcue', "form", function() {
+
                             var $form = $(this),
                                 file = $form.find('.file-field')[0].files[0];
 
                             util.clear(true);
-                            var fd = new FormData();
-                            fd.append('file', file);
+//                            var fd = new FormData();
+//                            fd.append('file', file);
 
                             pushcue.uploads.create({
-                                    file: fd,
+                                    file: file,
                                     progress: util.progress
                                 },
                                 function(err) {
-                                    if (err) console.log(err);
+                                    if (err) console.trace(err);
                                     view('list');
                                 }
                             );
