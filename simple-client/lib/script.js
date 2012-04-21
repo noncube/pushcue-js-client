@@ -1,4 +1,6 @@
+/*global $xhr:false, pushcue: false, EJS: false */
 $(document).ready(function(){
+    'use strict';
     if (!window.EJS || !window.pushcue || !pushcue.supported) {
         alert('not supported');
         // TODO: display better error
@@ -8,7 +10,7 @@ $(document).ready(function(){
     var console = window.console || (function(){
         var nop = function() {};
         return { error: nop, log: nop, trace: nop, warn: nop, debug: nop };
-    })();
+    }());
 
     var views,
         view,

@@ -1,8 +1,12 @@
+/*global $xhr:false */
+//
 // Client-side JS Pushcue API library
 //
 // Requires xhr2lib
 // https://github.com/p-m-p/xhr2-lib
-(function(main){ if(window.$xhr && $xhr.supported()){
+(function(main){
+    'use strict';
+    if(window.$xhr && $xhr.supported()){
     var pc = { supported: true }, // Public API
         user = {}; // hold user auth
 
