@@ -377,7 +377,7 @@
 
                     } else {
                         if (opts.progress) opts.progress(100);
-                        callback(data);
+                        callback(undefined, data);
                     }
                 };
 

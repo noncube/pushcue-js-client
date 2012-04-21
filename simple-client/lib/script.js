@@ -244,6 +244,7 @@ $(document).ready(function(){
         $page.toggleClass('authenticated', authenticated);
 
 //        TODO: will deal with this later -- window.history.state object in gecko, popstate window event in webkit
+//          NOTE: works in FF -- chrome drops the 'state'/data object entirely
 //        history.pushState(data, 'Pushcue',
 //            window.location.protocol + '//' + document.domain + '#' + name
 //        );
