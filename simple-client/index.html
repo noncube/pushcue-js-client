@@ -121,11 +121,15 @@
         </form>
         <h2>Your Files</h2>
         <div class="files">
+        [% if (uploads.length > 0) { %]
         [% for(var i=0; i<uploads.length; i++) { %]
             <p>
                 <a id="file-[%= uploads[i]._id %]">[%= uploads[i].name %]</a>
                 [%= uploads[i].view_count %] views [%= uploads[i].download_count %] downloads
             </p>
+        [% } %]
+        [% } else { %]
+            <p>No files available.</p>
         [% } %]
         </div>
         <h2>Your Inboxes</h2>

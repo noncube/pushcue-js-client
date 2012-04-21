@@ -312,9 +312,9 @@
                     type: 'POST',
                     dataType: opts.dataType || 'json',
                     headers: {
-                        'async': 'x-pushcue',
                         'Cache-Control': 'no-cache',
-                        'Content-Type': 'application/octet-stream'
+                        'Content-Type': 'application/octet-stream',
+                        'X-File-Name': opts.file.name
                     },
                     timeout: 2000,
                     error: error_handler(callback)
@@ -326,7 +326,8 @@
             }
 
             var cSize = conf.chunksize,
-                count = 0;
+                count = 0,
+                key;
 
             // recursive chunked upload
             function xhrPart(file, start) {
@@ -342,6 +343,13 @@
                             undefined;
 
                 baseSettings.url = baseUrl + '/?start=' + start;
+                if (key) {
+                    baseSettings.url += '&key=' + key;
+                }
+                if (last) {
+                    baseSettings.url += '&last=1';
+                }
+
                 baseSettings.data = chunk;
 
                 if (opts.progress)
@@ -354,16 +362,14 @@
 
                 baseSettings.success = function(data) {
                     if (!last) {
+                        if (!key)
+                            key = data.key;
+
                         xhrPart(file, end);
+
                     } else {
                         if (opts.progress) opts.progress(100);
-                        //finish it
-//                        _request({
-//                            path: '/uploads',
-//                            method: 'POST',
-//                            auth: 'maybe',
-//                            data: { async: true, file_path: data.filename }
-//                        }, callback);
+                        callback(data);
                     }
                 };
 
