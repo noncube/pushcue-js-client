@@ -133,6 +133,10 @@
         user['PC-TOKEN'] = auth['PC-TOKEN'];
     };
 
+    pc.clearAuth = function() {
+        user = {};
+    };
+
     // Authenticate a user to the service.
     // Requires opts.username && opts.password && callback
     pc.auth = function(opts, callback) {

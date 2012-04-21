@@ -5,6 +5,11 @@ $(document).ready(function(){
         return false;
     }
 
+    var console = window.console || (function(){
+        var nop = function() {};
+        return { error: nop, log: nop, trace: nop, warn: nop, debug: nop };
+    })();
+
     var views,
         view,
         util,
@@ -174,8 +179,6 @@ $(document).ready(function(){
                                 file = $form.find('.file-field')[0].files[0];
 
                             util.clear(true);
-//                            var fd = new FormData();
-//                            fd.append('file', file);
 
                             pushcue.uploads.create({
                                     file: file,
@@ -188,6 +191,10 @@ $(document).ready(function(){
                             );
                             return false;
                         });
+                    } else {
+                        // their stored auth no longer valid; clear creds and show login
+                        pushcue.clearAuth();
+                        view('login');
                     }
                 });
             }
@@ -228,25 +235,23 @@ $(document).ready(function(){
     };
 
     view = function(name, data) {
-        setTimeout(function() {
-            var authenticated = pushcue.isAuthenticated();
-            util.clear();
+        var authenticated = pushcue.isAuthenticated();
+        util.clear();
 
-            // Hide/show relevant elements based on login state (using css)
-            $page.toggleClass('authenticated', authenticated);
+        // Hide/show relevant elements based on login state (using css)
+        $page.toggleClass('authenticated', authenticated);
 
-    //        TODO: will deal with this later -- window.history.state object in gecko, popstate window event in webkit
-    //        history.pushState(data, 'Pushcue',
-    //            window.location.protocol + '//' + document.domain + '#' + name
-    //        );
+//        TODO: will deal with this later -- window.history.state object in gecko, popstate window event in webkit
+//        history.pushState(data, 'Pushcue',
+//            window.location.protocol + '//' + document.domain + '#' + name
+//        );
 
-            if (views[name].requireAuth && !authenticated) {
-                views.login.fn(data);
-            } else {
-                views[name].fn(data);
-            }
-            console.log(name + ' rendered.');
-        },10);
+        if (views[name].requireAuth && !authenticated) {
+            views.login.fn(data);
+        } else {
+            views[name].fn(data);
+        }
+        console.log(name + ' rendered.');
     };
 
     init();
