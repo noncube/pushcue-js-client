@@ -10,7 +10,6 @@
     var pc = { supported: true }, // Public API
         user = {}; // hold user auth
 
-
     // Configuration (private)
     //------------------------------------------------------------------------/
     var conf = { host: 'localhost', port: 8000, secure: false, chunksize: 1024*1024 /*1mb*/ };
@@ -120,6 +119,78 @@
         }
 
         $xhr.ajax(settings);
+    };
+
+
+    // recursive chunked upload
+    var _chunked_request = function(opts, callback) {
+        var baseUrl = conf.url() + opts.path,
+            baseSettings = {
+                type: 'POST',
+                dataType: opts.dataType || 'json',
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Content-Type': 'application/octet-stream',
+                    'X-File-Name': opts.file.name
+                },
+                timeout: 2000,
+                error: error_handler(callback)
+            };
+
+        var cSize = conf.chunksize,
+            count = 0,
+            key;
+
+
+        if (user['PC-ID'] && user['PC-TOKEN']) {
+            baseSettings.headers['PC-ID'] = user['PC-ID'];
+            baseSettings.headers['PC-TOKEN'] = user['PC-TOKEN'];
+        }
+
+        var xhrPart = function (file, start) {
+            var totalSize = file.size,
+                end = start + cSize,
+                last = totalSize - end <= 0;
+
+            count++;
+
+            var chunk = (file.mozSlice) ? file.mozSlice(start, end) :
+                        (file.webkitSlice) ? file.webkitSlice(start, end) :
+                        (file.slice) ? file.slice(start, cSize) :
+                        undefined;
+
+            baseSettings.url = baseUrl + '/?start=' + start;
+
+            if (key) baseSettings.url += '&key=' + key;
+            if (last) baseSettings.url += '&last=1';
+
+            baseSettings.data = chunk;
+
+            if (opts.progress)
+                baseSettings.progress = function() {
+                    var percent = (
+                        (this.loaded + count * cSize - cSize) * 100 / totalSize
+                        ) | 0;
+                    opts.progress(percent);
+                };
+
+            baseSettings.success = function(data) {
+                if (!last) {
+                    if (!key)
+                        key = data.key;
+
+                    xhrPart(file, end);
+
+                } else {
+                    if (opts.progress) opts.progress(100);
+                    callback(undefined, data);
+                }
+            };
+
+            $xhr.ajax(baseSettings);
+        };
+
+        xhrPart(opts.file, 0);
     };
 
     // Main public API
@@ -304,6 +375,7 @@
         },
 
         create: function(opts, callback) {
+            // file needs to be instanceof File
             if (!callback || !opts.file)
                 throw new PushcueError({
                    code: 'missing_param',
@@ -314,77 +386,9 @@
                    }
                });
 
-            // file needs to be instanceof File
-            var baseUrl = conf.url() + '/uploads/async',
-                baseSettings = {
-                    type: 'POST',
-                    dataType: opts.dataType || 'json',
-                    headers: {
-                        'Cache-Control': 'no-cache',
-                        'Content-Type': 'application/octet-stream',
-                        'X-File-Name': opts.file.name
-                    },
-                    timeout: 2000,
-                    error: error_handler(callback)
-                };
+            opts.path = '/uploads/async';
 
-            if (user['PC-ID'] && user['PC-TOKEN']) {
-                baseSettings.headers['PC-ID'] = user['PC-ID'];
-                baseSettings.headers['PC-TOKEN'] = user['PC-TOKEN'];
-            }
-
-            var cSize = conf.chunksize,
-                count = 0,
-                key;
-
-            // recursive chunked upload
-            function xhrPart(file, start) {
-                var totalSize = file.size,
-                    end = start + cSize,
-                    last = totalSize - end <= 0;
-
-                count++;
-
-                var chunk = (file.mozSlice) ? file.mozSlice(start, end) :
-                            (file.webkitSlice) ? file.webkitSlice(start, end) :
-                            (file.slice) ? file.slice(start, cSize) :
-                            undefined;
-
-                baseSettings.url = baseUrl + '/?start=' + start;
-                if (key) {
-                    baseSettings.url += '&key=' + key;
-                }
-                if (last) {
-                    baseSettings.url += '&last=1';
-                }
-
-                baseSettings.data = chunk;
-
-                if (opts.progress)
-                    baseSettings.progress = function() {
-                        var percent = (
-                            (this.loaded + count * cSize - cSize) * 100 / totalSize
-                        ) | 0;
-                        opts.progress(percent);
-                    };
-
-                baseSettings.success = function(data) {
-                    if (!last) {
-                        if (!key)
-                            key = data.key;
-
-                        xhrPart(file, end);
-
-                    } else {
-                        if (opts.progress) opts.progress(100);
-                        callback(undefined, data);
-                    }
-                };
-
-                $xhr.ajax(baseSettings);
-            }
-
-            xhrPart(opts.file, 0);
+            _chunked_request(opts, callback);
         },
 
         'get': function(opts, callback) {
@@ -483,6 +487,73 @@
                 auth: true
             }, callback);
         }
+    };
+    pc.bins = {
+        'get': function(opts, callback) {
+            if (!callback || !opts.id)
+                throw new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing id or callback.',
+                    data: {
+                        id: opts.id,
+                        callback: callback ? true : undefined
+                    }
+                });
+
+            var settings = {
+                path: '/bins/' + opts.id,
+                method: 'GET',
+                auth: 'maybe'
+            };
+
+            _request(settings, callback);
+        },
+        create: function(opts, callback) {
+            if (!opts || !callback)
+                throw new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing opts or callback.',
+                    data: {
+                        opts: opts,
+                        callback: callback ? true : undefined
+                    }
+                });
+
+            if (!opts.name)
+                return callback(new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing a required parameter.',
+                    data: {
+                        name: opts.name
+                    }
+                }));
+
+            _request({ path: '/bins', method: 'POST', data: opts }, callback);
+        },
+
+        upload: function(opts, callback) {
+            // file needs to be instanceof File
+            if (!callback)
+                throw new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing callback.'
+                });
+
+            if (!opts.file || !opts.bin)
+                return callback(new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing file or bin id.',
+                    data: {
+                        file: opts.file,
+                        bin: opts.bin
+                    }
+                }));
+
+            opts.path = '/bins/' + opts.bin + '/async';
+
+            _chunked_request(opts, callback);
+        }
+
     };
 
     main.pushcue = pc;
