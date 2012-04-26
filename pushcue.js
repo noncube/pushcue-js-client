@@ -133,12 +133,12 @@
                     'Content-Type': 'application/octet-stream',
                     'X-File-Name': opts.file.name
                 },
-                timeout: 2000,
-                error: error_handler(callback)
+                timeout: 2000
             };
 
         var cSize = conf.chunksize,
             count = 0,
+            retries = 5 + ((opts.file.size / cSize)/100) | 0, // 5 + (1 per 100 chunks)
             key;
 
 
@@ -184,6 +184,14 @@
                 } else {
                     if (opts.progress) opts.progress(100);
                     callback(undefined, data);
+                }
+            };
+            baseSettings.error = function(statusText, status) {
+                if (retries > 0) {
+                    retries--;
+                    xhrPart(file, start);
+                } else {
+                    callback.call(this, parseErrorResult(this.responseText, status));
                 }
             };
 
