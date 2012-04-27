@@ -132,9 +132,24 @@
             <p>No files available.</p>
         [% } %]
         </div>
-        <h2>Your Inboxes</h2>
-        <p><a href="#">Inbox Name</a> received xx uploads</p>
-        <p><a href="#">Inbox Name</a> received xx uploads</p>
+    </section>
+</script>
+
+<script type="text/template" id="bins_tmpl">
+    <section>
+        <h2>Your Bins</h2>
+        <div class="bins">
+            [% if (bins.length > 0) { %]
+            [% for(var i=0; i<bins.length; i++) { %]
+            <p>
+                <a id="bins-[%= bins[i]._id %]">[%= bins[i].name %]</a>
+                received [%= bins[i].upload_count %] uploads
+            </p>
+            [% } %]
+            [% } else { %]
+            <p>No bins available.</p>
+            [% } %]
+        </div>
     </section>
 </script>
 
@@ -151,6 +166,7 @@
     </section>
 </script>
 <script type="text/javascript" src="lib/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="lib/native.history.js"></script>
 
 <script type="text/javascript" src="lib/ejs_production.js"></script>
 <script type="text/javascript" src="lib/xhr2lib.js"></script>

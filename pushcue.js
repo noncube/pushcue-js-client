@@ -6,13 +6,18 @@
 // https://github.com/p-m-p/xhr2-lib
 (function(main){
     'use strict';
-    if(window.$xhr && $xhr.supported()){
-    var pc = { supported: true }, // Public API
-        user = {}; // hold user auth
+    var pc = main.pushcue = {}; // Public API
+
+    if (!window.$xhr || !$xhr.supported()) {
+        return;
+    }
+
+    pc.supported = true;
 
     // Configuration (private)
     //------------------------------------------------------------------------/
-    var conf = { host: 'localhost', port: 8000, secure: false, chunksize: 1024*1024 /*1mb*/ };
+    var user = {}, // hold user auth
+        conf = { host: 'localhost', port: 8000, secure: false, chunksize: 1024*1024 /*1mb*/ };
 
     conf.url = function(secure_required){
         return 'http' + ( (secure_required || this.secure) ? 's' : '') +
@@ -376,7 +381,7 @@
                 });
 
             _request({
-                path: '/uploads',
+                path: '/uploads' + '?page=' + page,
                 method: 'GET',
                 auth: true
             }, callback);
@@ -497,6 +502,22 @@
         }
     };
     pc.bins = {
+        all: function(callback) {
+            if (!callback)
+                throw new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing page/callback.',
+                    data: {
+                        callback: callback ? true : undefined
+                    }
+                });
+
+            _request({
+                path: '/bins',
+                method: 'GET',
+                auth: true
+            }, callback);
+        },
         'get': function(opts, callback) {
             if (!callback || !opts.id)
                 throw new PushcueError({
@@ -566,4 +587,4 @@
 
     main.pushcue = pc;
 
-} else {main.pushcue={};}})(window);
+})(window);
