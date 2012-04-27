@@ -296,6 +296,24 @@ $(document).ready(function(){
                     }
 
                     util.render('bin_tmpl', result);
+                    $main.on('submit.pushcue', "form", function() {
+
+                        var $form = $(this),
+                            file = $form.find('.file-field')[0].files[0];
+
+                        util.clear(true);
+
+                        pushcue.bins.upload({
+                                file: file,
+                                progress: util.progress
+                            },
+                            function(err) {
+                                if (err) console.trace(err);
+                                view('get_bin', data);
+                            }
+                        );
+                        return false;
+                    });
                 });
             }
         },

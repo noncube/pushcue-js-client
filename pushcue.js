@@ -23,6 +23,7 @@
         return 'http' + ( (secure_required || this.secure) ? 's' : '') +
                 '://' + this.host + ':' + this.port;
     };
+
     pc.url = function() {
         return conf.url.call(conf);
     };
