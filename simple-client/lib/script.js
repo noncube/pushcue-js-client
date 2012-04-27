@@ -75,6 +75,15 @@ $(document).ready(function(){
             $main.find('#progress-percentage').text(x.toString() + '%');
         },
 
+        setTitle: function(title) {
+            try {
+                document.getElementsByTagName('title')[0].innerHTML =
+                    title.replace('<','&lt;').replace('>','&gt;').replace(' & ',' &amp; ');
+            }
+            catch ( Exception ) { }
+            document.title = title;
+        },
+
         nav: {
             set: function(name, displayName)  {
                 $nav.html('<a class="go-'+name + '">' + displayName + '</a> ');
@@ -161,6 +170,7 @@ $(document).ready(function(){
                     }
                 }
                 History.pushState(data, title, url);
+                util.setTitle(title); // doesn't trigger on hash change normally
             },
 
             update: function(data, title) {
@@ -172,6 +182,7 @@ $(document).ready(function(){
                 state.url = state.url.split('#')[0] + '#' + History.getHash();
 
                 History.replaceState(state.data, state.title, state.url);
+                util.setTitle(title); // doesn't trigger on hash change normally
             }
         }
     };
@@ -266,6 +277,48 @@ $(document).ready(function(){
                     }
 
                     util.render('bins_tmpl', bins);
+                    $main.on('click.pushcue', ".new-bin", function() {
+                        view('create_bin');
+                    });
+                });
+            }
+        },
+
+        get_bin: {
+            title: "Pushcue > loading bin...",
+            requireAuth: 'maybe',
+            fn: function(data) {
+                util.nav.set('login', 'Login');
+
+                pushcue.bins.get(data.id, function(err, result) {
+                    if (err) {
+                        return view('login');
+                    }
+
+                    util.render('bin_tmpl', result);
+                });
+            }
+        },
+
+        create_bin: {
+            title: "Pushcue > create a new bin",
+            requireAuth: true,
+            fn: function(err) {
+                util.nav.set('list', 'Home');
+                util.nav.add('bins', 'Bins');
+                util.render('bin_create_tmpl', err);
+
+                $main.on('submit.pushcue', "form", function() {
+                    var $form = $(this),
+                        name = $form.find('[type="text"]').val();
+                    pushcue.bins.create({name: name}, function(err) {
+                        if (err) {
+                            view('create_bin', err);
+                        } else {
+                            view('bins');
+                        }
+                    });
+                    return false;
                 });
             }
         },
@@ -318,7 +371,7 @@ $(document).ready(function(){
 
                 pushcue.uploads.get(id, function(err, res) {
                     if (!err) {
-                        util.state.update(false, "Pushcue > " + res.name);
+                        util.state.update(false, "Pushcue > file >" + res.name);
 
                         util.render('detail_tmpl', res);
                         $main.on('click.pushcue', "div.details p a.delete", function() {

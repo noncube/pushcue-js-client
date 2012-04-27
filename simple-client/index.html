@@ -137,7 +137,7 @@
 
 <script type="text/template" id="bins_tmpl">
     <section>
-        <h2>Your Bins</h2>
+        <h2>Your Bins <a class='new-bin'>add new</a></h2>
         <div class="bins">
             [% if (bins.length > 0) { %]
             [% for(var i=0; i<bins.length; i++) { %]
@@ -150,6 +150,28 @@
             <p>No bins available.</p>
             [% } %]
         </div>
+    </section>
+</script>
+
+<script type="text/template" id="bin_tmpl">
+    <section>
+        <h2>[%= this.name %] Bin</h2>
+        <form action="" class="file-upload">
+            Upload: <input type="file" class="file-field"><input type="submit" value="upload">
+        </form>
+    </section>
+</script>
+
+<script type="text/template" id="bin_create_tmpl">
+    <section>
+        <h2>Create a bin</h2>
+        [% if (this.message) { %]
+        <p class="error">[%= this.message %]</p>
+        [% } %]
+        <form action="">
+            <p>Name: <input type="text"></p>
+            <p><input type="submit" value="upload"></p>
+        </form>
     </section>
 </script>
 

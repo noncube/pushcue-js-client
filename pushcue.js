@@ -557,7 +557,7 @@
                     }
                 }));
 
-            _request({ path: '/bins', method: 'POST', data: opts }, callback);
+            _request({ path: '/bins', method: 'POST', auth: true, data: opts }, callback);
         },
 
         upload: function(opts, callback) {
