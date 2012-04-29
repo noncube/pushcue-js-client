@@ -323,6 +323,32 @@
 
             _request({ path: '/users', method: 'POST', data: opts }, callback);
         },
+        subscribe: function(token, callback) {
+            if (!callback)
+                throw new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing callback.',
+                    data: {
+                        callback: callback ? true : undefined
+                    }
+                });
+
+            if (!token)
+                return callback(new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing a required parameter (token).',
+                    data: {
+                        token: !!token
+                    }
+                }));
+
+            _request({
+                 path: '/users/subscribe',
+                 method: 'POST',
+                 auth: true,
+                 data: { stripeToken: token }
+             }, callback);
+        },
         update: function(opts, callback) {
             if (!opts || !callback)
                 throw new PushcueError({
@@ -362,7 +388,7 @@
                 });
 
             _request({
-                path: '/users/' + user.username,
+                path: '/users/' + user['PC-ID'],
                 method: 'GET',
                 auth: true
             }, callback);

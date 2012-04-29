@@ -15,7 +15,7 @@
     <div class="grid-container">
         <a id="sitelogo">pushcue</a>
         <section id="toolbar" class="onlyauth">
-            <a href="/upgrade/" class="upgrade">Upgrade</a>
+            <a class="upgrade">Upgrade</a>
             <a class="settings">Settings</a>
             <a class="signout">Sign Out</a>
         </section>
@@ -101,6 +101,42 @@
             <p><input type="password" class="pass2" placeholder="password again" /></p>
             <p><input  type="submit" value="change password" /></p>
         </form>
+        [% if (this.user.paid) { %]
+        <p>Pro user</p>
+        [% } else { %]
+        <p>Free user</p>
+        [% } %]
+    </section>
+
+</script>
+
+<script type="text/template" id="upgrade_tmpl">
+    <section>
+        <h2>Upgrade to Pro</h2>
+        [% if (this.err) { %]
+        <p class="error">[%= this.err %]</p>
+        [% } %]
+        [% if (this.success) { %]
+        <p>Success! You've upgraded to Pro status.</p>
+        [% } else { %]
+        <form action="" class="payment-form">
+            <div class="form-row">
+                <label>Card Number</label>
+                <input type="text" size="20" autocomplete="off" class="card-number"/>
+            </div>
+            <div class="form-row">
+                <label>CVC</label>
+                <input type="text" size="4" autocomplete="off" class="card-cvc"/>
+            </div>
+            <div class="form-row">
+                <label>Expiration (MM/YYYY)</label>
+                <input type="text" size="2" class="card-expiry-month"/>
+                <span> / </span>
+                <input type="text" size="4" class="card-expiry-year"/>
+            </div>
+            <button type="submit" class="submit-button">Submit Payment</button>
+        </form>
+        [% } %]
     </section>
 
 </script>

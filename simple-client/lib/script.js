@@ -1,4 +1,4 @@
-/*global $xhr:false, pushcue: false, EJS: false, History: false */
+/*global $xhr:false, pushcue: false, EJS: false, History: false, Stripe: false */
 /**
  * Simple pushcue api javascript client.
  *
@@ -42,11 +42,14 @@ $(document).ready(function(){
         $page.on('click.pushcue','a.signout', function() {
             view('logout');
         });
-        $page.on('click.pushcue','#sitelogo', function() {
-            view('list');
-        });
         $page.on('click.pushcue','a.settings', function() {
             view('settings');
+        });
+        $page.on('click.pushcue','a.upgrade', function() {
+            view('upgrade');
+        });
+        $page.on('click.pushcue','#sitelogo', function() {
+            view('list');
         });
 
         window.addEventListener("hashchange", function() {
@@ -60,6 +63,8 @@ $(document).ready(function(){
                 }
             }
         }, false);
+
+        Stripe.setPublishableKey('pk_lsddf2qnxg53Ov3ougpaUL6E8aEMG');
     };
 
     util = {
@@ -76,6 +81,7 @@ $(document).ready(function(){
         },
         render: function(name, data) {
             data = data || {};
+            data.user = user;
             data.api_url = api_url;
             new EJS({element: name}).update('content', data);
         },
@@ -104,6 +110,21 @@ $(document).ready(function(){
             clear: function() {
                 $nav.html('');
             }
+        },
+
+        loadUser: function(callback) {
+            pushcue.users.get(function(err, result) {
+                if (!err) {
+                    // keeping this info for use later
+                    // (paid features access, showing username, etc)
+                    user = result;
+                } else {
+                    console.log(err);
+                }
+                if (callback) {
+                    callback();
+                }
+            });
         },
 
         auth: {
@@ -214,13 +235,7 @@ $(document).ready(function(){
                         if (!err) {
                             util.auth.save();
                             view('list');
-                            pushcue.users.get(function(err, result) {
-                                if (!err) {
-                                    // keeping this info for use later
-                                    // (paid features access, showing username, etc)
-                                    user = result;
-                                }
-                            });
+                            util.loadUser();
                         } else {
                             err.form = 'login';
                             view('login',err);
@@ -249,6 +264,42 @@ $(document).ready(function(){
                 });
             }
         },
+
+        upgrade: {
+            title: "Pushcue > upgrade",
+            fn: function(err) {
+                util.nav.set('list', 'Home');
+                util.render('upgrade_tmpl', err);
+                $main.on('submit.pushcue', "form", function() {
+                    $main.find('.submit-button').attr("disabled", "disabled");
+
+                    Stripe.createToken({
+                        number: $main.find('.card-number').val(),
+                        cvc: $main.find('.card-cvc').val(),
+                        exp_month: $main.find('.card-expiry-month').val(),
+                        exp_year: $main.find('.card-expiry-year').val()
+                    }, function(status, response) {
+                        if (response.error) {
+                            view('upgrade', {err: response.error.message});
+                        } else {
+                            // token contains id, last4, and card type
+                            var token = response.id;
+                            pushcue.users.subscribe(token, function(err) {
+                                if (err) {
+                                    view('upgrade', {err: err});
+                                } else {
+                                    view('upgrade', {success: true});
+                                    user.paid = true;
+                                }
+                            });
+                        }
+                    });
+
+                    return false;
+                });
+            }
+        },
+
         settings: {
             title: "Pushcue > settings",
             fn: function(err) {
@@ -433,7 +484,7 @@ $(document).ready(function(){
 
                 pushcue.uploads.get(id, function(err, res) {
                     if (!err) {
-                        util.state.update(false, "Pushcue > file >" + res.name);
+                        util.state.update(false, "Pushcue > file > " + res.name);
 
                         util.render('detail_tmpl', res);
                         $main.on('click.pushcue', "div.details p a.delete", function() {
@@ -491,16 +542,25 @@ $(document).ready(function(){
     };
 
     init();
-    util.auth.load();
+    var authorized = util.auth.load();
 
-    var initialState = util.state.load_initial();
+    var _initial_continue = function() {
+        var initialState = util.state.load_initial();
 
-    if (initialState.valid) {
-        view(initialState.view, initialState.data);
+        if (initialState.valid) {
+            view(initialState.view, initialState.data);
 
+        } else {
+            view('list');
+        }
+    };
+
+    if (authorized) {
+        util.loadUser(_initial_continue);
     } else {
-        view('list');
+        _initial_continue();
     }
+
 
 
 });
