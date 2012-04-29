@@ -1,4 +1,9 @@
 /*global $xhr:false, pushcue: false, EJS: false, History: false */
+/**
+ * Simple pushcue api javascript client.
+ *
+ * Uses jQuery, History.js, EJS, and pushcue.js
+ */
 $(document).ready(function(){
     'use strict';
     if (!window.EJS || !window.pushcue || !pushcue.supported) {
@@ -15,6 +20,8 @@ $(document).ready(function(){
         view,
         util,
         init,
+
+        user,
 
         state_split = '&',
 
@@ -37,6 +44,9 @@ $(document).ready(function(){
         });
         $page.on('click.pushcue','#sitelogo', function() {
             view('list');
+        });
+        $page.on('click.pushcue','a.settings', function() {
+            view('settings');
         });
 
         window.addEventListener("hashchange", function() {
@@ -204,6 +214,13 @@ $(document).ready(function(){
                         if (!err) {
                             util.auth.save();
                             view('list');
+                            pushcue.users.get(function(err, result) {
+                                if (!err) {
+                                    // keeping this info for use later
+                                    // (paid features access, showing username, etc)
+                                    user = result;
+                                }
+                            });
                         } else {
                             err.form = 'login';
                             view('login',err);
@@ -229,6 +246,33 @@ $(document).ready(function(){
                 });
                 $main.on('click.pushcue', "a.go-key", function() {
                     view('request_invitation');
+                });
+            }
+        },
+        settings: {
+            title: "Pushcue > settings",
+            fn: function(err) {
+                util.nav.set('list', 'Home');
+                util.render('settings_tmpl', err);
+
+                $main.on('submit.pushcue', "form", function() {
+                    var $form = $(this),
+                        pass = $form.find('.pass').val(),
+                        pass_check = $form.find('.pass2').val();
+
+                    if (pass !== pass_check) {
+                        view('settings', {err: "Both passwords must match."});
+
+                    } else {
+                        pushcue.users.update({ password: pass }, function(err) {
+                            if (!err) {
+                                view('settings', { success: "Password changed." });
+                            } else {
+                                view('settings', {err: err.message });
+                            }
+                        });
+                    }
+                    return false;
                 });
             }
         },

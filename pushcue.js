@@ -324,7 +324,31 @@
             _request({ path: '/users', method: 'POST', data: opts }, callback);
         },
         update: function(opts, callback) {
-            //TODO
+            if (!opts || !callback)
+                throw new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing opts or callback.',
+                    data: {
+                        opts: opts,
+                        callback: callback ? true : undefined
+                    }
+                });
+
+            if (!opts.password)
+                return callback(new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing a required parameter.',
+                    data: {
+                        password: opts.password
+                    }
+                }));
+
+            _request({
+                 path: '/users/' + user['PC-ID'],
+                 method: 'PUT',
+                 auth: true,
+                 data: opts
+             }, callback);
         },
         // Get current user
         'get': function(callback) {
