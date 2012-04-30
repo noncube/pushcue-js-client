@@ -101,8 +101,10 @@
             <p><input type="password" class="pass2" placeholder="password again" /></p>
             <p><input  type="submit" value="change password" /></p>
         </form>
-        [% if (this.user.paid) { %]
-        <p>Pro user</p>
+        [% if (this.user.subscribed) { %]
+        <p>Pro user <a class="unsubscribe">(Unsubscribe)</a></p>
+        [% } else if (this.user.paid) { %]
+        <p>Pro user (unsubscribed, will run out soon)</p>
         [% } else { %]
         <p>Free user</p>
         [% } %]
@@ -136,6 +138,20 @@
             </div>
             <button type="submit" class="submit-button">Submit Payment</button>
         </form>
+        [% } %]
+    </section>
+
+</script>
+<script type="text/template" id="unsubscribe_tmpl">
+    <section>
+        <h2>Unsubscribe</h2>
+        [% if (this.err) { %]
+        <p class="error">[%= this.err %]</p>
+        [% } %]
+        [% if (this.success) { %]
+        <p>Success! You've unsubscribed from Pro.</p>
+        [% } else { %]
+        <a class="unsub">Click here to unsubscribe from pushcue Pro.</a>
         [% } %]
     </section>
 
@@ -179,6 +195,7 @@
         [% for(var i=0; i<uploads.length; i++) { %]
             <p>
                 <a id="file-[%= uploads[i]._id %]" class="item">[%= uploads[i].name %]</a>
+                [% if (uploads[i].bin) { %]<span class="tag">[%= uploads[i].bin %]</span>[% } %]
                 [%= uploads[i].view_count %] views [%= uploads[i].download_count %] downloads
             </p>
         [% } %]
@@ -241,7 +258,9 @@
 
 <script type="text/template" id="detail_tmpl">
     <section>
-        <h2>Details for [%= this.name %]</h2>
+        <h2>Details for [%= this.name %]
+            [% if (this.bin) { %]<span class="tag">[%= this.bin %]</span>[% } %]
+        </h2>
         <p><span class="tag">[%= this.link %]</span></p>
         <div class="details" id="detail-[%= this._id %]">
             <p><a href="[%= api_url %]/uploads/[%= this._id %]/download/[%= this.name %]">Download</a></p>

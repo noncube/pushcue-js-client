@@ -95,7 +95,7 @@
             type: opts.method,
             dataType: opts.dataType || 'json',
             headers: opts.headers || {},
-            timeout: opts.timeout || 3000,
+            timeout: opts.timeout || 4000,
             success: success_handler(callback),
             error: error_handler(callback)
         };
@@ -139,7 +139,7 @@
                     'Content-Type': 'application/octet-stream',
                     'X-File-Name': opts.file.name
                 },
-                timeout: 2000
+                timeout: 3000
             };
 
         var cSize = conf.chunksize,
@@ -350,6 +350,22 @@
                  auth: true,
                  data: { stripeToken: token }
              }, callback);
+        },
+        unsubscribe: function(callback) {
+            if (!callback)
+                throw new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing callback.',
+                    data: {
+                        callback: callback ? true : undefined
+                    }
+                });
+
+            _request({
+                path: '/users/unsubscribe',
+                method: 'POST',
+                auth: true
+            }, callback);
         },
         update: function(opts, callback) {
             if (!opts || !callback)

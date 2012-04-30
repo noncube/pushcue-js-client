@@ -126,7 +126,7 @@ $(document).ready(function(){
                     // (paid features access, showing username, etc)
                     user = result;
                 } else {
-                    console.log(err);
+                    util.auth.remove();
                 }
                 if (callback) {
                     callback();
@@ -211,9 +211,11 @@ $(document).ready(function(){
                 var url = util.state.get().url.split('#')[0] + '#' + data.view;
                 current_view = data.view;
 
-                for (var key in data.data) {
-                    if (data.data.hasOwnProperty(key)) {
-                        url += state_split + key + '=' + data.data[key];
+                if (append_data) {
+                    for (var key in data.data) {
+                        if (data.data.hasOwnProperty(key)) {
+                            url += state_split + key + '=' + data.data[key];
+                        }
                     }
                 }
                 History.pushState(data, title, url);
@@ -283,6 +285,7 @@ $(document).ready(function(){
 
         upgrade: {
             title: "Pushcue > upgrade",
+            requireAuth: true,
             fn: function(err) {
                 util.nav.set('list', 'Home');
                 util.render('upgrade_tmpl', err);
@@ -299,6 +302,7 @@ $(document).ready(function(){
                             view('upgrade', {err: response.error.message});
                         } else {
                             // token contains id, last4, and card type
+                            util.clear();
                             var token = response.id;
                             pushcue.users.subscribe(token, function(err) {
                                 if (err) {
@@ -315,12 +319,37 @@ $(document).ready(function(){
                 });
             }
         },
+        unsubscribe: {
+            title: "Pushcue > unsubscribe",
+            requireAuth: true,
+            fn: function(result) {
+                util.nav.set('list', 'Home');
+                util.nav.add('settings', 'Settings');
+                util.render('unsubscribe_tmpl', result);
+
+                if (!result || !result.success) {
+                    $main.on('click.pushcue', "a.unsub", function() {
+                        util.clear();
+                        pushcue.users.unsubscribe(function(err) {
+                            err = err || { success: true };
+                            user.subscribed = false;
+                            view('unsubscribe', err);
+                        });
+                    });
+                }
+            }
+        },
 
         settings: {
             title: "Pushcue > settings",
+            requireAuth: true,
             fn: function(err) {
                 util.nav.set('list', 'Home');
                 util.render('settings_tmpl', err);
+
+                $main.on('click.pushcue', "a.unsubscribe", function() {
+                    view('unsubscribe');
+                });
 
                 $main.on('submit.pushcue', "form", function() {
                     var $form = $(this),
@@ -401,8 +430,14 @@ $(document).ready(function(){
 
         get_bin: {
             title: "Pushcue > loading bin...",
+            append_data: true,
             fn: function(data) {
-                util.nav.set('login', 'Login');
+                if (pushcue.isAuthenticated()) {
+                    util.nav.set('list', 'Home');
+                    util.nav.add('bins', 'Bins');
+                } else {
+                    util.nav.set('login', 'Login or Register');
+                }
 
                 pushcue.bins.get(data.id, function(err, result) {
                     if (err) {
@@ -504,7 +539,12 @@ $(document).ready(function(){
             title: "Pushcue > loading file...",
             append_data: true,
             fn: function(id) {
-                util.nav.set('list', 'Home');
+                if (pushcue.isAuthenticated()) {
+                    util.nav.set('list', 'Home');
+                    util.nav.add('bins', 'Bins');
+                } else {
+                    util.nav.set('login', 'Login or Register');
+                }
 
                 pushcue.uploads.get(id, function(err, res) {
                     if (!err) {
@@ -517,7 +557,7 @@ $(document).ready(function(){
                         });
                     } else {
                         // todo: better errors, possible 404, 500, or notauthorized (ask for password)
-                        console.error(err);
+                        console.trace(err);
                     }
                 });
             }
@@ -546,7 +586,7 @@ $(document).ready(function(){
 
         // Hide/show relevant elements based on login state (using css)
         $page.toggleClass('authenticated', authenticated);
-        $page.toggleClass('free', user && !user.paid);
+        $page.toggleClass('free', user && !user.subscribed);
 
         if (views[name].requireAuth && !authenticated) {
             util.state.set({ view: 'login' }, views.login.title);
