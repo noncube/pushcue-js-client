@@ -144,6 +144,7 @@
 
         var cSize = conf.chunksize,
             count = 0,
+            finished = false,
             retries = 5 + ((opts.file.size / cSize)/100) | 0, // 5 + (1 per 100 chunks)
             key;
 
@@ -188,15 +189,16 @@
                     xhrPart(file, end);
 
                 } else {
+                    finished = true;
                     if (opts.progress) opts.progress(100);
                     callback(undefined, data);
                 }
             };
             baseSettings.error = function(statusText, status) {
-                if (retries > 0) {
+                if (!finished && retries > 0) {
                     retries--;
                     xhrPart(file, start);
-                } else {
+                } else if (!finished) {
                     callback.call(this, parseErrorResult(this.responseText, status));
                 }
             };

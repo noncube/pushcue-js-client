@@ -303,11 +303,11 @@ footer small {
 .files a, .link, #toolbar a, nav a, #sitelogo {
     cursor: pointer;
 }
-.simple .onlyauth {
-    visibility: hidden !important;
+.simple .onlyauth, body.simple .onlyfree {
+    display: none;
 }
-body.authenticated .onlyauth {
-    visibility: visible !important;
+body.authenticated .onlyauth, body.free .onlyfree {
+    display: block;
 }
 
 div.first {
@@ -328,4 +328,37 @@ div.first {
     text-align: center;
     height: 25px;
     padding: 5px;
+}
+
+.pagination {
+    height: 25px;
+};
+
+.pagination:after
+{
+    content: ".";
+    display: block;
+    height: 0;
+    clear: both;
+    visibility: hidden;
+}
+
+.pagination a {
+    display: block;
+    float: left;
+    height: 25px;
+    width: 25px;
+    border: 1px solid #CCC;
+    text-align: center;
+    margin-right: 7px;
+
+    background-color: #fff;
+    -moz-border-radius: 2px;
+    -webkit-border-radius: 2px;
+    border-radius: 2px;
+}
+
+.pagination .current {
+    color: #969696;
+    cursor: default;
 }

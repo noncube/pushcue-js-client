@@ -34,6 +34,8 @@ $(document).ready(function(){
         $page = $('.simple');
 
     init = function() {
+        Stripe.setPublishableKey('pk_T5fCdEmbKfnojUJK5TnplmET3As5D');
+
         // super-simple nav
         $page.on('click.pushcue','#nav a', function() {
             view($(this).attr('class').substring(3));
@@ -52,6 +54,12 @@ $(document).ready(function(){
             view('list');
         });
 
+        // pagination on list view
+        $page.on('click.pushcue','a.page', function() {
+            var page = $(this).attr('id').substring(1);
+            view('list', page);
+        });
+
         window.addEventListener("hashchange", function() {
             var new_view = History.getHash().split(state_split)[0];
 
@@ -64,7 +72,6 @@ $(document).ready(function(){
             }
         }, false);
 
-        Stripe.setPublishableKey('pk_lsddf2qnxg53Ov3ougpaUL6E8aEMG');
     };
 
     util = {
@@ -445,7 +452,7 @@ $(document).ready(function(){
                 pushcue.uploads.all(page, function(err, res) {
                     if (!err) {
                         util.render('files_tmpl', res);
-                        $main.on('click.pushcue', ".files p a", function() {
+                        $main.on('click.pushcue', ".files p a.item", function() {
                             var id = $(this).attr('id').substring(5);
                             view('display_upload', {id: id});
                         });
@@ -454,17 +461,19 @@ $(document).ready(function(){
                             var $form = $(this),
                                 file = $form.find('.file-field')[0].files[0];
 
-                            util.clear(true);
+                            if (file) {
+                                util.clear(true);
 
-                            pushcue.uploads.create({
-                                    file: file,
-                                    progress: util.progress
-                                },
-                                function(err) {
-                                    if (err) console.trace(err);
-                                    view('list');
-                                }
-                            );
+                                pushcue.uploads.create({
+                                        file: file,
+                                        progress: util.progress
+                                    },
+                                    function(err) {
+                                        if (err) console.trace(err);
+                                        view('list');
+                                    }
+                                );
+                            }
                             return false;
                         });
                     } else {
@@ -522,6 +531,7 @@ $(document).ready(function(){
 
         // Hide/show relevant elements based on login state (using css)
         $page.toggleClass('authenticated', authenticated);
+        $page.toggleClass('free', user && !user.paid);
 
         if (views[name].requireAuth && !authenticated) {
             util.state.set({ view: 'login' }, views.login.title);

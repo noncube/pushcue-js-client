@@ -15,7 +15,7 @@
     <div class="grid-container">
         <a id="sitelogo">pushcue</a>
         <section id="toolbar" class="onlyauth">
-            <a class="upgrade">Upgrade</a>
+            <a class="upgrade onlyfree">Upgrade</a>
             <a class="settings">Settings</a>
             <a class="signout">Sign Out</a>
         </section>
@@ -41,7 +41,7 @@
                 <!--<li><a href="/about/">About</a></li>-->
                 <!--<li><a href="/team/">Team</a></li>-->
                 <!--<li><a href="/app/">Mac App</a></li>-->
-                <li class="onlyauth"><a class="upgrade">Upgrade</a></li>
+                <li class="onlyfree"><a class="upgrade">Upgrade</a></li>
                 <li class="onlyauth"><a class="settings">Settings</a></li>
                 <li class="onlyauth"><a class="signout">Sign Out</a></li>
             </ul>
@@ -178,10 +178,21 @@
         [% if (uploads.length > 0) { %]
         [% for(var i=0; i<uploads.length; i++) { %]
             <p>
-                <a id="file-[%= uploads[i]._id %]">[%= uploads[i].name %]</a>
+                <a id="file-[%= uploads[i]._id %]" class="item">[%= uploads[i].name %]</a>
                 [%= uploads[i].view_count %] views [%= uploads[i].download_count %] downloads
             </p>
         [% } %]
+        <p class="pagination">
+[% for(var i=1; i<=page_info.total_pages; i++) { %]
+  <a
+  [% if (i === page_info.page) { %]
+  class="current"
+  [% } else { %]
+  class="page" id="p[%= i %]"
+  [% } %]>[%= i %]
+  </a>
+[% } %]
+        </p>
         [% } else { %]
             <p>No files available.</p>
         [% } %]
