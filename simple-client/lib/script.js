@@ -150,6 +150,17 @@ $(document).ready(function(){
             }
         },
 
+        getCurrentUrl: function(name, data) {
+            var url = util.state.get().url.split('#')[0] + '#' + name;
+
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    url += state_split + key + '=' + data[key];
+                }
+            }
+            return url;
+        },
+
         state: {
             get: function() {
                 return History.getState();
@@ -200,11 +211,9 @@ $(document).ready(function(){
                 var url = util.state.get().url.split('#')[0] + '#' + data.view;
                 current_view = data.view;
 
-                if (append_data) {
-                    for (var key in data.data) {
-                        if (data.data.hasOwnProperty(key)) {
-                            url += state_split + key + '=' + data.data[key];
-                        }
+                for (var key in data.data) {
+                    if (data.data.hasOwnProperty(key)) {
+                        url += state_split + key + '=' + data.data[key];
                     }
                 }
                 History.pushState(data, title, url);
@@ -382,13 +391,16 @@ $(document).ready(function(){
                     $main.on('click.pushcue', ".new-bin", function() {
                         view('create_bin');
                     });
+                    $main.on('click.pushcue', ".bins p a", function() {
+                        var bin_id = $(this).attr('id').substring(5);
+                        view('get_bin', { id: bin_id });
+                    });
                 });
             }
         },
 
         get_bin: {
             title: "Pushcue > loading bin...",
-            requireAuth: 'maybe',
             fn: function(data) {
                 util.nav.set('login', 'Login');
 
@@ -396,7 +408,9 @@ $(document).ready(function(){
                     if (err) {
                         return view('login');
                     }
+                    result.link = util.getCurrentUrl('get_bin', data);
 
+                    util.state.update(false, "Pushcue > bin > " + result.name);
                     util.render('bin_tmpl', result);
                     $main.on('submit.pushcue', "form", function() {
 
@@ -407,6 +421,7 @@ $(document).ready(function(){
 
                         pushcue.bins.upload({
                                 file: file,
+                                bin: data.id,
                                 progress: util.progress
                             },
                             function(err) {
@@ -494,7 +509,7 @@ $(document).ready(function(){
                 pushcue.uploads.get(id, function(err, res) {
                     if (!err) {
                         util.state.update(false, "Pushcue > file > " + res.name);
-
+                        res.link = util.getCurrentUrl('display_upload', id);
                         util.render('detail_tmpl', res);
                         $main.on('click.pushcue', "div.details p a.delete", function() {
                             var id = $main.find('.detail').attr('id').substring(7);

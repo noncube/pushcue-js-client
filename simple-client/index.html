@@ -185,10 +185,8 @@
         <p class="pagination">
 [% for(var i=1; i<=page_info.total_pages; i++) { %]
   <a
-  [% if (i === page_info.page) { %]
-  class="current"
-  [% } else { %]
-  class="page" id="p[%= i %]"
+  [% if (i === page_info.page) { %]class="current"
+  [% } else { %]class="page" id="p[%= i %]"
   [% } %]>[%= i %]
   </a>
 [% } %]
@@ -220,10 +218,11 @@
 
 <script type="text/template" id="bin_tmpl">
     <section>
-        <h2>[%= this.name %] Bin</h2>
+        <h2>[%= this.name %] Bin <span class="tag">[%= this.link %]</span></h2>
         <form action="" class="file-upload">
             Upload: <input type="file" class="file-field"><input type="submit" value="upload">
         </form>
+        <br>
     </section>
 </script>
 
@@ -235,7 +234,7 @@
         [% } %]
         <form action="">
             <p>Name: <input type="text"></p>
-            <p><input type="submit" value="upload"></p>
+            <p><input type="submit" value="create bin"></p>
         </form>
     </section>
 </script>
@@ -243,6 +242,7 @@
 <script type="text/template" id="detail_tmpl">
     <section>
         <h2>Details for [%= this.name %]</h2>
+        <p><span class="tag">[%= this.link %]</span></p>
         <div class="details" id="detail-[%= this._id %]">
             <p><a href="[%= api_url %]/uploads/[%= this._id %]/download/[%= this.name %]">Download</a></p>
             <!--<p><a href="#">Email</a></p>-->

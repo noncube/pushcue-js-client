@@ -571,19 +571,19 @@
                 auth: true
             }, callback);
         },
-        'get': function(opts, callback) {
-            if (!callback || !opts.id)
+        'get': function(id, callback) {
+            if (!callback || !id)
                 throw new PushcueError({
                     code: 'missing_param',
                     message: 'Missing id or callback.',
                     data: {
-                        id: opts.id,
+                        id: id,
                         callback: callback ? true : undefined
                     }
                 });
 
             var settings = {
-                path: '/bins/' + opts.id,
+                path: '/bins/' + id,
                 method: 'GET',
                 auth: 'maybe'
             };

@@ -304,10 +304,10 @@ footer small {
     cursor: pointer;
 }
 .simple .onlyauth, body.simple .onlyfree {
-    display: none;
+    display: none !important;
 }
 body.authenticated .onlyauth, body.free .onlyfree {
-    display: block;
+    display: block !important;
 }
 
 div.first {
@@ -361,4 +361,11 @@ div.first {
 .pagination .current {
     color: #969696;
     cursor: default;
+}
+
+.tag {
+    font-size: 12px;
+    font-weight: normal;
+    padding: 5px;
+    border: 1px solid #ccc;
 }
