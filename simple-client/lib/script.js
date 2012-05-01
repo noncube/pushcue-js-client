@@ -7,7 +7,8 @@
 $(document).ready(function(){
     'use strict';
     if (!window.EJS || !window.pushcue || !pushcue.supported) {
-        // TODO: display better error
+
+        new EJS({element: 'not_supported_tmpl'}).update('content', {});
         return false;
     }
 
