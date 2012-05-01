@@ -17,7 +17,7 @@
     // Configuration (private)
     //------------------------------------------------------------------------/
     var user = {}, // hold user auth
-        conf = { host: 'api.pushcue.com', port: 80, secure: false, chunksize: 1024*1024 /*1mb*/ };
+        conf = { host: 'api.pushcue.com', port: 80, secure: false, chunksize: 1024*512 /*512 KB*/ };
 
     conf.url = function(secure){
         var secure_required = secure || this.secure;
@@ -90,7 +90,7 @@
         };
     };
     var error_handler = function(callback) { // <this> is the xhr
-        return function(statusText, status) {
+        return function(statusText, status) { //todo: add another option for timeout
             callback.call(this, parseErrorResult(this.responseText, status));
         };
     };
@@ -103,7 +103,7 @@
             type: opts.method,
             dataType: opts.dataType || 'json',
             headers: opts.headers || {},
-            timeout: opts.timeout || 4000,
+            timeout: opts.timeout || 5000,
             success: success_handler(callback),
             error: error_handler(callback)
         };
@@ -147,7 +147,7 @@
                     'Content-Type': 'application/octet-stream',
                     'X-File-Name': opts.file.name
                 },
-                timeout: 3000
+                timeout: 20000
             };
 
         var cSize = conf.chunksize,
