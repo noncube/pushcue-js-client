@@ -17,7 +17,7 @@
     // Configuration (private)
     //------------------------------------------------------------------------/
     var user = {}, // hold user auth
-        conf = { host: 'localhost', port: 8000, secure: false, chunksize: 1024*1024 /*1mb*/ };
+        conf = { host: 'api.pushcue.com', port: 80, secure: false, chunksize: 1024*1024 /*1mb*/ };
 
     conf.url = function(secure){
         var secure_required = secure || this.secure;
