@@ -19,9 +19,17 @@
     var user = {}, // hold user auth
         conf = { host: 'localhost', port: 8000, secure: false, chunksize: 1024*1024 /*1mb*/ };
 
-    conf.url = function(secure_required){
-        return 'http' + ( (secure_required || this.secure) ? 's' : '') +
-                '://' + this.host + ':' + this.port;
+    conf.url = function(secure){
+        var secure_required = secure || this.secure;
+        var url = 'http' + (secure_required ? 's' : '') + '://' + this.host;
+
+        if (secure_required && this.port !== 443) {
+            url += ':' + this.port;
+        } else if (!secure_required && this.port !== 80) {
+            url += ':' + this.port;
+        }
+
+        return url;
     };
 
     pc.url = function() {
@@ -195,6 +203,7 @@
                 }
             };
             baseSettings.error = function(statusText, status) {
+                count--;
                 if (!finished && retries > 0) {
                     retries--;
                     xhrPart(file, start);

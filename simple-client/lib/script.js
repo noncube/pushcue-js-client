@@ -249,6 +249,10 @@ $(document).ready(function(){
                             username: $form.find('[type="text"]').val(),
                             password: $form.find('[type="password"]').val()
                         };
+                    // kill invalid login attempts without hitting api
+                    if (data.password.length === 0 || data.username.length === 0)
+                        return view('login',{ username: data.username });
+
                     pushcue.auth(data, function(err) {
                         if (!err) {
                             util.auth.save();
@@ -256,6 +260,7 @@ $(document).ready(function(){
                             util.loadUser();
                         } else {
                             err.form = 'login';
+                            err.username = data.username;
                             view('login',err);
                         }
                     });
@@ -582,7 +587,6 @@ $(document).ready(function(){
     view = function(name, data) {
         var authenticated = pushcue.isAuthenticated();
         util.clear();
-
 
         // Hide/show relevant elements based on login state (using css)
         $page.toggleClass('authenticated', authenticated);

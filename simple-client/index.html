@@ -61,7 +61,8 @@
             <p class="error">Invalid username/password.</p>
             [% } %]
             <form action="" class="login">
-                <p><input type="text" placeholder="username" /></p>
+                <p><input type="text" placeholder="username"
+[% if (this.username) { %]value="[%= this.username %]" [% } %]/></p>
                 <p><input type="password" placeholder="password" /></p>
                 <p><input  type="submit" value="login" /></p>
             </form>
