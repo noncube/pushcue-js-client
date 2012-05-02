@@ -297,29 +297,38 @@ $(document).ready(function(){
                 util.render('upgrade_tmpl', err);
                 $main.on('submit.pushcue', "form", function() {
                     $main.find('.submit-button').attr("disabled", "disabled");
-
-                    Stripe.createToken({
+                    var cc = {
                         number: $main.find('.card-number').val(),
                         cvc: $main.find('.card-cvc').val(),
                         exp_month: $main.find('.card-expiry-month').val(),
                         exp_year: $main.find('.card-expiry-year').val()
-                    }, function(status, response) {
-                        if (response.error) {
-                            view('upgrade', {err: response.error.message});
-                        } else {
+                    };
+                    var promo = $main.find('.promo').val();
+
+                    var subscribe = function(data) {
+                        pushcue.users.subscribe(data, function(err) {
+                            if (err) {
+                                view('upgrade', {err: err});
+                            } else {
+                                view('upgrade', {success: true});
+                                user.paid = true;
+                            }
+                        });
+                    };
+
+                    if (cc.number && cc.cvc && cc.exp_month && cc.exp_year) {
+                        Stripe.createToken(cc, function(status, response) {
+                            if (response.error)
+                                return view('upgrade', {err: response.error.message});
+
                             // token contains id, last4, and card type
                             util.clear();
-                            var token = response.id;
-                            pushcue.users.subscribe(token, function(err) {
-                                if (err) {
-                                    view('upgrade', {err: err});
-                                } else {
-                                    view('upgrade', {success: true});
-                                    user.paid = true;
-                                }
-                            });
-                        }
-                    });
+                            subscribe({ token: response.id, promo: promo });
+                        });
+
+                    } else if (promo.length > 0) {
+                        subscribe({ promo: promo });
+                    }
 
                     return false;
                 });
