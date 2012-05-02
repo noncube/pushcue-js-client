@@ -300,7 +300,7 @@ footer small {
     border-bottom: 1px solid #cecece;
     border-top: 1px solid #cecece; }
 
-.files a, .link, #toolbar a, nav a, #sitelogo {
+a {
     cursor: pointer;
 }
 .simple .onlyauth, body.simple .onlyfree {
