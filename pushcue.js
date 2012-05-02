@@ -144,7 +144,7 @@
                 dataType: opts.dataType || 'json',
                 headers: {
                     'Cache-Control': 'no-cache',
-                    'Content-Type': 'application/octet-stream',
+                    'Content-Type': opts.file.type,
                     'X-File-Name': opts.file.name
                 },
                 timeout: 20000
