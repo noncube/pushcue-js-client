@@ -334,7 +334,7 @@
 
             _request({ path: '/users', method: 'POST', data: opts }, callback);
         },
-        subscribe: function(token, callback) {
+        subscribe: function(opts, callback) {
             if (!callback)
                 throw new PushcueError({
                     code: 'missing_param',
@@ -344,20 +344,28 @@
                     }
                 });
 
-            if (!token)
+            if (!opts.token && !opts.promo)
                 return callback(new PushcueError({
                     code: 'missing_param',
-                    message: 'Missing a required parameter (token).',
+                    message: 'Missing a required parameter (token or promo).',
                     data: {
-                        token: !!token
+                        token: !!opts.token,
+                        promo: !!opts.promo
                     }
                 }));
+            var data = {};
+            if (opts.token)
+                data.stripeToken = opts.token;
+
+            if (opts.promo)
+                data.promo = opts.promo;
+
 
             _request({
                  path: '/users/subscribe',
                  method: 'POST',
                  auth: true,
-                 data: { stripeToken: token }
+                 data: data
              }, callback);
         },
         unsubscribe: function(callback) {
