@@ -558,7 +558,7 @@ $(document).ready(function(){
                         res.link = util.getCurrentUrl('display_upload', id);
                         util.render('detail_tmpl', res);
                         $main.on('click.pushcue', "div.details p a.delete", function() {
-                            var id = $main.find('.detail').attr('id').substring(7);
+                            var id = $main.find('.details').attr('id').substring(7);
                             view('delete_upload', id);
                         });
                     } else {
