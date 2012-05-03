@@ -21,7 +21,7 @@
 
     var hist = window.hist = {
         currentURL: function(view) {
-            return window.location.href.split('#!/')[0] + view ? '#!/' + view : '';
+            return window.location.href.split('#!/')[0] + (view ? '#!/' + view : '');
         },
 
         get: function() {

@@ -67,9 +67,9 @@ $(document).ready(function(){
             $main.off('.pushcue');
 
             if (!file) {
-                $main.html('<p>Loading...</p>');
+                $main.html('<p class="loading">Loading...</p>');
             } else {
-                $main.html('<p>Uploading - ' +
+                $main.html('<p class="loading">Uploading - ' +
                     '<progress id="file-progress" max="100" value="0"></progress>' +
                     '<span id="progress-percentage">0%</span></p>');
             }
@@ -98,12 +98,14 @@ $(document).ready(function(){
         nav: {
             set: function(name, displayName)  {
                 $nav.html('<a class="go-'+name + '">' + displayName + '</a> ');
+                $nav.show();
             },
             add: function(name, displayName)  {
                 $nav.append(': <a class="go-'+name + '">' + displayName + '</a> ');
             },
             clear: function() {
                 $nav.html('');
+                $nav.hide();
             }
         },
 
