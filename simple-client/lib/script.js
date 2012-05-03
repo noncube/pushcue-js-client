@@ -1,8 +1,8 @@
-/*global $xhr:false, pushcue: false, EJS: false, History: false, Stripe: false */
+/*global $xhr:false, pushcue: false, EJS: false, hist: false, Stripe: false */
 /**
  * Simple pushcue api javascript client.
  *
- * Uses jQuery, History.js, EJS, and pushcue.js
+ * Uses jQuery, EJS, and pushcue.js
  */
 $(document).ready(function(){
     'use strict';
@@ -23,10 +23,6 @@ $(document).ready(function(){
         init,
 
         user,
-
-        state_split = '&',
-
-        current_view,
 
         api_url = pushcue.url(),
 
@@ -61,18 +57,9 @@ $(document).ready(function(){
             view('list', page);
         });
 
-        window.addEventListener("hashchange", function() {
-            var new_view = History.getHash().split(state_split)[0];
-
-            if (new_view !== current_view) {
-                var state = util.state.parseHash();
-
-                if (state.valid) {
-                    view(state.view, state.data);
-                }
-            }
-        }, false);
-
+        hist.hashChange = function(state) {
+            if (views[state.view]) view(state.view, state.data);
+        };
     };
 
     util = {
@@ -152,88 +139,7 @@ $(document).ready(function(){
         },
 
         getCurrentUrl: function(name, data) {
-            var url = util.state.get().url.split('#')[0] + '#' + name;
-
-            for (var key in data) {
-                if (data.hasOwnProperty(key)) {
-                    url += state_split + key + '=' + data[key];
-                }
-            }
-            return url;
-        },
-
-        state: {
-            get: function() {
-                return History.getState();
-            },
-
-            load_initial: function() {
-
-                var view, state, valid,
-                    hash = History.getHash();
-
-                if (hash.length > 0) { // try state object first
-
-                    var current_state = util.state.get();
-                    if (current_state.data && current_state.data.view) {
-                        view = current_state.data.view;
-                        state = current_state.data.data;
-                        if (views[view]) valid = true;
-
-                    } else {
-                        return util.state.parseHash();
-                    }
-                }
-                return { data: state, view: view, valid: valid };
-            },
-
-            parseHash: function() { // try to parse hash
-                var view, state, valid,
-                    hash = History.getHash();
-
-                if (hash.length > 0) {
-
-                    var key, hashObj = hash.split(state_split);
-
-                    view = hashObj[0];
-
-                    for (var i=1; i < hashObj.length; i++) {
-                        if (!state) state = {};
-                        key = hashObj[i].split('=')[0];
-                        state[key] = hashObj[i].split('=')[1];
-                    }
-
-                }
-                if (views[view]) valid = true;
-                return { data: state, view: view, valid: valid };
-            },
-
-            set: function(data, title, append_data) {
-                var url = util.state.get().url.split('#')[0] + '#' + data.view;
-                current_view = data.view;
-
-                if (append_data) {
-                    for (var key in data.data) {
-                        if (data.data.hasOwnProperty(key)) {
-                            url += state_split + key + '=' + data.data[key];
-                        }
-                    }
-                }
-                History.pushState(data, title, url);
-                util.setTitle(title); // doesn't trigger on hash change normally
-            },
-
-            update: function(data, title) {
-                var state = util.state.get();
-
-                if (data) state.data = data;
-                if (title) state.title = title;
-
-                state.url = state.url.split('#')[0] + '#' + History.getHash();
-
-                History.replaceState(state.data, state.title, state.url);
-                util.setTitle(title); // doesn't trigger on hash change normally
-            }
+            return hist.currentURL(name) + hist.encodeHashData(data);
         }
     };
 
@@ -437,13 +343,13 @@ $(document).ready(function(){
                     });
                     $main.on('click.pushcue', ".bins p a", function() {
                         var bin_id = $(this).attr('id').substring(5);
-                        view('get_bin', { id: bin_id });
+                        view('bin', { id: bin_id });
                     });
                 });
             }
         },
 
-        get_bin: {
+        bin: {
             title: "Pushcue > loading bin...",
             append_data: true,
             fn: function(data) {
@@ -458,9 +364,9 @@ $(document).ready(function(){
                     if (err) {
                         return view('login');
                     }
-                    result.link = util.getCurrentUrl('get_bin', data);
+                    result.link = util.getCurrentUrl('bin', data);
 
-                    util.state.update(false, "Pushcue > bin > " + result.name);
+                    hist.update("Pushcue > bin > " + result.name);
                     util.render('bin_tmpl', result);
                     $main.on('submit.pushcue', "form", function() {
 
@@ -476,7 +382,7 @@ $(document).ready(function(){
                             },
                             function(err) {
                                 if (err) console.trace(err);
-                                view('get_bin', data);
+                                view('bin', data);
                             }
                         );
                         return false;
@@ -519,7 +425,7 @@ $(document).ready(function(){
                         util.render('files_tmpl', res);
                         $main.on('click.pushcue', ".files p a.item", function() {
                             var id = $(this).attr('id').substring(5);
-                            view('display_upload', {id: id});
+                            view('uploads', {id: id});
                         });
                         $main.on('submit.pushcue', "form", function() {
 
@@ -550,7 +456,7 @@ $(document).ready(function(){
             }
         },
 
-        display_upload: {
+        uploads: {
             title: "Pushcue > loading file...",
             append_data: true,
             fn: function(id) {
@@ -563,8 +469,8 @@ $(document).ready(function(){
 
                 pushcue.uploads.get(id, function(err, res) {
                     if (!err) {
-                        util.state.update(false, "Pushcue > file > " + res.name);
-                        res.link = util.getCurrentUrl('display_upload', id);
+                        hist.update("Pushcue > file > " + res.name);
+                        res.link = util.getCurrentUrl('uploads', id);
                         util.render('detail_tmpl', res);
                         $main.on('click.pushcue', "div.details p a.delete", function() {
                             var id = $main.find('.details').attr('id').substring(7);
@@ -603,13 +509,13 @@ $(document).ready(function(){
         $page.toggleClass('free', user && !user.subscribed);
 
         if (views[name].requireAuth && !authenticated) {
-            util.state.set({ view: 'login' }, views.login.title);
+            hist.set({ view: 'login' }, views.login.title);
             views.login.fn(data);
             console.log('login rendered (lacked proper auth).');
 
         } else {
             if (!views[name].skipState) { // some views (logout, delete) just redirect
-                util.state.set(
+                hist.set(
                     { view: name, data: data },
                     views[name].title || "Pushcue",
                     !!views[name].append_data
@@ -624,9 +530,9 @@ $(document).ready(function(){
     var authorized = util.auth.load();
 
     var _initial_continue = function() {
-        var initialState = util.state.load_initial();
+        var initialState = hist.get();
 
-        if (initialState.valid) {
+        if (initialState && views[initialState.view]) {
             view(initialState.view, initialState.data);
 
         } else {
