@@ -72,14 +72,28 @@
     </div>
     <div class="col">
         <h2>Please register</h2>
+        [% if (this.form === 'register') { %]
+          [% if (this.code === 'missing_param') { %]
+            <p class="error">All fields are required.</p>
+          [% } else if (this.message) { %]
+            <p class="error">[%= this.message %]</p>
+          [% } else { %]
+            <p class="error">Unknown Error</p>
+          [% } %]
+        [% } %]
+
         [% if (this.success) { %]
         <p>Success! You may now use the form on the left to login.</p>
-        [% } else { %]
+        [% } else {  if (!this.data) { this.data = {}; } %]
+
         <form action="" class="register">
-            <p><input class="r_email" type="text" placeholder="email"/></p>
-            <p><input class="r_user" type="text" placeholder="username" /></p>
+            <p><input class="r_email" type="text" placeholder="email"
+                [% if (data.email) { %]value="[%= data.email %]" [% } %]/></p>
+            <p><input class="r_user" type="text" placeholder="username"
+                [% if (data.username) { %]value="[%= data.username %]" [% } %]/></p>
             <p><input class="r_pass" type="password" placeholder="password" /></p>
-            <p><input class="r_key" type="text" placeholder="key" /></p>
+            <p><input class="r_key" type="text" placeholder="key"
+                [% if (data.invite) { %]value="[%= data.invite %]" [% } %] /></p>
             <p><input type="submit" value="register" /> (No key? <a class="go-key">click here</a>)</p>
         </form>
         [% } %]
@@ -154,6 +168,10 @@
     [% } %]
 
 </script>
+<script type="text/template" id="not_found_tmpl">
+    <h2>Sorry, we can't find that.</h2>
+</script>
+
 
 <script type="text/template" id="request_tmpl">
     <h2>Request an invitation</h2>
@@ -217,7 +235,9 @@
 </script>
 
 <script type="text/template" id="bin_tmpl">
-    <h2>[%= this.name %] Bin <span class="tag">[%= this.link %]</span></h2>
+    <h2>[%= this.name %] Bin
+     <input type="text" class="tag-link" readonly="readonly" value="[%= this.link %]" size="[%= this.link.length-4 %]">
+    </h2>
     <form action="" class="file-upload">
         Upload: <input type="file" class="file-field"><input type="submit" value="upload">
     </form>
@@ -239,7 +259,7 @@
     <h2>Details for [%= this.name %]
         [% if (this.bin) { %]<span class="tag">[%= this.bin %]</span>[% } %]
     </h2>
-    <p><span class="tag">[%= this.link %]</span></p>
+    <p><input type="text" class="tag-link" readonly="readonly" value="[%= this.link %]" size="[%= this.link.length-4 %]"></p>
     <div class="details" id="detail-[%= this._id %]">
         <p><a href="[%= api_url %]/uploads/[%= this._id %]/download">Download</a></p>
         <!--<p><a href="#">Email</a></p>-->

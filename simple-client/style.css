@@ -361,7 +361,7 @@ div.first {
     cursor: default;
 }
 
-.tag {
+.tag, .tag-link {
     font-size: 12px;
     font-weight: normal;
     padding: 5px;

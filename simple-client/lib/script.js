@@ -50,6 +50,9 @@ $(document).ready(function(){
         $page.on('click.pushcue','#sitelogo', function() {
             view('list');
         });
+        $page.on('click.pushcue','.tag-link', function() {
+            $(this).select(); // select entire link on first click
+        });
 
         // pagination on list view
         $page.on('click.pushcue','a.page', function() {
@@ -364,7 +367,12 @@ $(document).ready(function(){
 
                 pushcue.bins.get(data.id, function(err, result) {
                     if (err) {
-                        return view('login');
+                        if (err.status === 404) {
+                            return view('not_found');
+                        } else {
+                            console.log(err);
+                            return view('list');
+                        }
                     }
                     result.link = util.getCurrentUrl('bin', data);
 
@@ -457,6 +465,12 @@ $(document).ready(function(){
                 });
             }
         },
+        not_found: {
+            title: "Pushcue > not found",
+            fn: function() {
+                util.render('not_found_tmpl');
+            }
+        },
 
         uploads: {
             title: "Pushcue > loading file...",
@@ -479,8 +493,12 @@ $(document).ready(function(){
                             view('delete_upload', id);
                         });
                     } else {
-                        // todo: better errors, possible 404, 500, or notauthorized (ask for password)
-                        console.trace(err);
+                        if (err.status === 404) {
+                            view('not_found');
+                        } else {
+                            console.trace(err);
+                        }
+                        // todo: better errors, possible 500 or notauthorized (ask for password)
                     }
                 });
             }
@@ -494,6 +512,7 @@ $(document).ready(function(){
                     if (!err) {
                         view('list');
                     } else {
+                        view('list');
                         // todo: better errors, possible 404, 500, or notauthorized
                         console.error(err);
                     }
@@ -508,7 +527,7 @@ $(document).ready(function(){
 
         // Hide/show relevant elements based on login state (using css)
         $page.toggleClass('authenticated', authenticated);
-        $page.toggleClass('free', user && !user.subscribed);
+        $page.toggleClass('free', !!(user && !user.subscribed));
 
         if (views[name].requireAuth && !authenticated) {
             hist.set({ view: 'login' }, views.login.title);
