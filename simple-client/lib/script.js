@@ -31,7 +31,7 @@ $(document).ready(function(){
         $page = $('.simple');
 
     init = function() {
-        Stripe.setPublishableKey('pk_T5fCdEmbKfnojUJK5TnplmET3As5D');
+        Stripe.setPublishableKey('pk_lsddf2qnxg53Ov3ougpaUL6E8aEMG');
 
         // super-simple nav
         $page.on('click.pushcue','#nav a', function() {
@@ -218,8 +218,8 @@ $(document).ready(function(){
                             if (err) {
                                 view('upgrade', {err: err});
                             } else {
+                                user.paid = user.subscribed = true;
                                 view('upgrade', {success: true});
-                                user.paid = true;
                             }
                         });
                     };
