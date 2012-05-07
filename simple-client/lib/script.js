@@ -215,7 +215,6 @@ $(document).ready(function(){
                 util.nav.set('list', 'Home');
                 util.render('upgrade_tmpl', err);
                 $main.on('submit.pushcue', "form", function() {
-                    $main.find('.submit-button').attr("disabled", "disabled");
                     var cc = {
                         number: $main.find('.card-number').val(),
                         cvc: $main.find('.card-cvc').val(),
@@ -236,9 +235,10 @@ $(document).ready(function(){
                     };
 
                     if (cc.number && cc.cvc && cc.exp_month && cc.exp_year) {
+                        $main.find('.submit-button').attr("disabled", "disabled");
                         Stripe.createToken(cc, function(status, response) {
                             if (response.error)
-                                return view('upgrade', {err: response.error.message});
+                                return view('upgrade', {err: response.error.message + '.'});
 
                             // token contains id, last4, and card type
                             util.clear();
@@ -246,6 +246,7 @@ $(document).ready(function(){
                         });
 
                     } else if (promo.length > 0) {
+                        $main.find('.submit-button').attr("disabled", "disabled");
                         subscribe({ promo: promo });
                     }
 
@@ -257,10 +258,9 @@ $(document).ready(function(){
             title: "Pushcue > change payment details",
             requireAuth: true,
             fn: function(err) {
-                util.render('change_cc_tmpl');
-                if (err && !err.success) {
+                util.render('change_cc_tmpl', err);
+                if (!err || !err.success) {
                     $main.on('submit.pushcue', "form", function() {
-                        $main.find('.submit-button').attr("disabled", "disabled");
                         var cc = {
                             number: $main.find('.card-number').val(),
                             cvc: $main.find('.card-cvc').val(),
@@ -268,9 +268,10 @@ $(document).ready(function(){
                             exp_year: $main.find('.card-expiry-year').val()
                         };
                         if (cc.number && cc.cvc && cc.exp_month && cc.exp_year) {
+                            $main.find('.submit-button').attr("disabled", "disabled");
                             Stripe.createToken(cc, function(status, response) {
                                 if (response.error)
-                                    return view('change_payment', {err: response.error.message});
+                                    return view('change_payment', {err: response.error.message + '.'});
 
                                 util.clear();
 
