@@ -50,6 +50,9 @@ $(document).ready(function(){
         $page.on('click.pushcue','#sitelogo', function() {
             view('list');
         });
+        $page.on('click.pushcue','.pro', function() {
+            view('pro');
+        });
         $page.on('click.pushcue','.tag-link', function() {
             $(this).select(); // select entire link on first click
         });
@@ -156,6 +159,7 @@ $(document).ready(function(){
                 util.render('login_tmpl', err);
 
                 $main.on('submit.pushcue', "form.login", function() {
+                    $main.find('.submit-button').attr("disabled", "disabled");
                     var $form = $(this),
                         data = {
                             username: $form.find('[type="text"]').val(),
@@ -168,8 +172,9 @@ $(document).ready(function(){
                     pushcue.auth(data, function(err) {
                         if (!err) {
                             util.auth.save();
-                            view('list');
-                            util.loadUser();
+                            util.loadUser(function(){
+                                view('list');
+                            });
                         } else {
                             err.form = 'login';
                             err.username = data.username;
@@ -179,6 +184,7 @@ $(document).ready(function(){
                     return false;
                 });
                 $main.on('submit.pushcue', "form.register", function() {
+                    $main.find('.submit-button').attr("disabled", "disabled");
                     var $form = $(this),
                         data = {
                             username: $form.find('.r_user').val(),
@@ -190,6 +196,8 @@ $(document).ready(function(){
                         if (err)
                             err.form = 'register';
                         err = err || {success: true};
+                        console.log(err);
+                        console.log(err.data);
                         view('login', err);
                     });
                     return false;
@@ -245,12 +253,60 @@ $(document).ready(function(){
                 });
             }
         },
+        change_payment: {
+            title: "Pushcue > change payment details",
+            requireAuth: true,
+            fn: function(err) {
+                util.render('change_cc_tmpl');
+                if (err && !err.success) {
+                    $main.on('submit.pushcue', "form", function() {
+                        $main.find('.submit-button').attr("disabled", "disabled");
+                        var cc = {
+                            number: $main.find('.card-number').val(),
+                            cvc: $main.find('.card-cvc').val(),
+                            exp_month: $main.find('.card-expiry-month').val(),
+                            exp_year: $main.find('.card-expiry-year').val()
+                        };
+                        if (cc.number && cc.cvc && cc.exp_month && cc.exp_year) {
+                            Stripe.createToken(cc, function(status, response) {
+                                if (response.error)
+                                    return view('change_payment', {err: response.error.message});
+
+                                util.clear();
+
+                                pushcue.users.update_payment({ token: response.id }, function(err) {
+                                    if (err) {
+                                        view('change_payment', {err: err});
+                                    } else {
+                                        view('change_payment', {success: true});
+                                    }
+                                });
+                            });
+                        }
+                        return false;
+                    });
+                }
+            }
+        },
+        pro: {
+            title: "Pushcue > pro user",
+            requireAuth: true,
+            fn: function() {
+                util.render('pro_tmpl');
+                $main.on('click.pushcue', "a.unsubscribe", function() {
+                    view('unsubscribe');
+                });
+                $main.on('click.pushcue', "a.change-cc", function() {
+                    view('change_payment');
+                });
+            }
+        },
         unsubscribe: {
             title: "Pushcue > unsubscribe",
             requireAuth: true,
             fn: function(result) {
                 util.nav.set('list', 'Home');
-                util.nav.add('settings', 'Settings');
+                util.nav.add('pro', 'Pro');
                 util.render('unsubscribe_tmpl', result);
 
                 if (!result || !result.success) {
@@ -272,10 +328,6 @@ $(document).ready(function(){
             fn: function(err) {
                 util.nav.set('list', 'Home');
                 util.render('settings_tmpl', err);
-
-                $main.on('click.pushcue', "a.unsubscribe", function() {
-                    view('unsubscribe');
-                });
 
                 $main.on('submit.pushcue', "form", function() {
                     var $form = $(this),

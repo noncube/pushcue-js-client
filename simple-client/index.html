@@ -62,9 +62,9 @@
         [% } %]
         <form action="" class="login">
             <p><input type="text" placeholder="username"
-[% if (this.username) { %]value="[%= this.username %]" [% } %]/></p>
+                [% if (this.username) { %]value="[%= this.username %]" [% } %]/></p>
             <p><input type="password" placeholder="password" /></p>
-            <p><input  type="submit" value="login" /></p>
+            <p><input  type="submit" value="login" class="submit-button" /></p>
         </form>
     </div>
     <div class="col">
@@ -94,7 +94,8 @@
             <p><input class="r_pass" type="password" placeholder="password" /></p>
             <p><input class="r_key" type="text" placeholder="key"
                 [% if (data.invite) { %]value="[%= data.invite %]" [% } %] /></p>
-            <p><input type="submit" value="register" /> (No key? <a class="go-key">click here</a>)</p>
+            <p><input type="submit" value="register" class="submit-button" />
+                (No key? <a class="go-key">click here</a>)</p>
         </form>
         [% } %]
     </div>
@@ -115,11 +116,40 @@
         <p><input  type="submit" value="change password" /></p>
     </form>
     [% if (this.user.subscribed) { %]
-    <p>Pro user <a class="unsubscribe">(Unsubscribe)</a></p>
+    <p>Pro user</p>
     [% } else if (this.user.paid) { %]
     <p>Pro user (unsubscribed, will run out soon)</p>
     [% } else { %]
     <p>Free user</p>
+    [% } %]
+
+</script>
+
+<script type="text/template" id="change_cc_tmpl">
+    <h2>Change payment details</h2>
+    [% if (this.err) { %]
+    <p class="error">[%= this.err %]</p>
+    [% } %]
+    [% if (this.success) { %]
+    <p>Success! Your payment details have been upgraded.</p>
+    [% } else { %]
+    <form action="" class="payment-form">
+        <p>
+            <label>Card Number</label>
+            <input type="text" size="20" autocomplete="off" class="card-number"/>
+        </p>
+        <p>
+            <label>CVC</label>
+            <input type="text" size="4" autocomplete="off" class="card-cvc"/>
+        </p>
+        <p>
+            <label>Expiration (MM/YYYY)</label>
+            <input type="text" size="2" class="card-expiry-month"/>
+            <span> / </span>
+            <input type="text" size="4" class="card-expiry-year"/>
+        </p>
+        <button type="submit" class="submit-button">Submit Payment Details</button>
+    </form>
     [% } %]
 
 </script>
@@ -133,24 +163,24 @@
     <p>Success! You've upgraded to Pro status.</p>
     [% } else { %]
     <form action="" class="payment-form">
-        <div class="form-row">
+        <p>
             <label>Card Number</label>
             <input type="text" size="20" autocomplete="off" class="card-number"/>
-        </div>
-        <div class="form-row">
+        </p>
+        <p>
             <label>CVC</label>
             <input type="text" size="4" autocomplete="off" class="card-cvc"/>
-        </div>
-        <div class="form-row">
+        </p>
+        <p>
             <label>Expiration (MM/YYYY)</label>
             <input type="text" size="2" class="card-expiry-month"/>
             <span> / </span>
             <input type="text" size="4" class="card-expiry-year"/>
-        </div>
-        <div class="form-row">
+        </p>
+        <p>
             <label>Promo Code</label>
             <input type="text" class="promo"/>
-        </div>
+        </p>
         <button type="submit" class="submit-button">Submit Payment</button>
     </form>
     [% } %]
@@ -181,7 +211,7 @@
     [% } %]
     <form action="">
         <p><input type="text" placeholder="email" /></p>
-        <p><input  type="submit" value="login" /></p>
+        <p><input type="submit" value="submit" class="submit-button" /></p>
     </form>
 [% } else { %]
     <p>Success! We'll send you an invitation as soon as we're ready for you.</p>
@@ -232,6 +262,12 @@
         <p>No bins available.</p>
         [% } %]
     </div>
+</script>
+
+<script type="text/template" id="pro_tmpl">
+    <h2>You are pro</h2>
+    <p><a class="change-cc">Change payment info</a></p>
+    <p><a class="unsubscribe">Unsubscribe</a></p>
 </script>
 
 <script type="text/template" id="bin_tmpl">

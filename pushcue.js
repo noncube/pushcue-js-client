@@ -368,6 +368,33 @@
                  data: data
              }, callback);
         },
+        update_payment: function(opts, callback) {
+            if (!callback)
+                throw new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing callback.',
+                    data: {
+                        callback: callback ? true : undefined
+                    }
+                });
+
+            if (!opts.token)
+                return callback(new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing a required parameter (token).',
+                    data: {
+                        token: !!opts.token
+                    }
+                }));
+            var data = { stripeToken: opts.token };
+
+            _request({
+                path: '/users/update-payment',
+                method: 'POST',
+                auth: true,
+                data: data
+            }, callback);
+        },
         unsubscribe: function(callback) {
             if (!callback)
                 throw new PushcueError({

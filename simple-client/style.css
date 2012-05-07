@@ -238,7 +238,9 @@ header #toolbar .settings {
 header #toolbar .upgrade {
     background: url("img/upgrade.png");
     width: 74px; }
-
+header #toolbar .pro {
+    background: url("img/pro.png");
+    width: 52px; }
 footer {
     bottom: 0;
     height: 50px;
@@ -301,7 +303,7 @@ footer small {
 a {
     cursor: pointer;
 }
-.simple .onlyauth, body.simple .onlyfree {
+.simple .onlyauth, body.simple .onlyfree, body.free .onlypro {
     display: none !important;
 }
 body.authenticated .onlyauth, body.free .onlyfree {
