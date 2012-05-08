@@ -85,6 +85,7 @@
     //------------------------------------------------------------------------/
     var success_handler = function(callback) { // <this> is the xhr
         return function(data) {
+            data = data || {};
             data.status = this.status;
             callback(undefined, data);
         };
