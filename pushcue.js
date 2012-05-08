@@ -723,6 +723,29 @@
             _request({ path: '/bins', method: 'POST', auth: true, data: opts }, callback);
         },
 
+        update: function(opts, callback) {
+            if (!opts || !callback)
+                throw new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing opts or callback.',
+                    data: {
+                        opts: opts,
+                        callback: callback ? true : undefined
+                    }
+                });
+
+            if (!opts._id)
+                return callback(new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing a required parameter.',
+                    data: {
+                        _id: opts._id
+                    }
+                }));
+
+            _request({ path: '/bins/' + opts._id, method: 'POST', auth: true, data: opts }, callback);
+        },
+
         upload: function(opts, callback) {
             // file needs to be instanceof File
             if (!callback)
