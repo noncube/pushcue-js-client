@@ -205,6 +205,68 @@ $(document).ready(function(){
                 $main.on('click.pushcue', "a.go-key", function() {
                     view('request_invitation');
                 });
+                $main.on('click.pushcue', "a.forgot", function() {
+                    view('forgot_password');
+                });
+            }
+        },
+        forgot: {
+            title: "Pushcue > reset password",
+            onlyID: true,
+            fn: function(obj) {
+                if (!obj || (!obj.id && !obj.success))
+                    return view('login');
+
+                util.render('forgot_tmpl', obj);
+                if (!obj.success) {
+                    $main.on('submit.pushcue', "form", function() {
+                        var $form = $(this),
+                            again = $form.find('.again').val(),
+                            data = {
+                                key: obj.id,
+                                username: $form.find('.username').val(),
+                                password: $form.find('.password').val()
+                            };
+
+                        if (!again || !data.username || !data.password) {
+                            obj.message = 'All fields are required.';
+                            view('forgot', obj);
+
+                        } else if (again !== data.password) {
+                            obj.message = 'Both passwords must match.';
+                            view('forgot', obj);
+
+                        } else {
+                            $main.find('.submit-button').attr("disabled", "disabled");
+                            pushcue.users.resetPassword(data, function(err) {
+                                err = err || { success: true };
+                                err.id = obj.id;
+                                view('forgot', err);
+                            });
+                        }
+                        return false;
+                    });
+                }
+            }
+        },
+        forgot_password: {
+            title: "Pushcue > reset password",
+            fn: function(err) {
+                util.render('forgot_form_tmpl', err);
+                if (!err || !err.success) {
+                    $main.on('submit.pushcue', "form", function() {
+                        var $form = $(this),
+                            data = {
+                                email: $form.find('[type="text"]').val(),
+                                link: hist.currentURL('forgot') + '/{{key}}'
+                            };
+                        pushcue.users.resetPasswordRequest(data, function(err) {
+                            err = err || { success: true };
+                            view('forgot_password', err);
+                        });
+                        return false;
+                    });
+                }
             }
         },
 
@@ -589,11 +651,19 @@ $(document).ready(function(){
 
         } else {
             if (!views[name].skipState) { // some views (logout, delete) just redirect
-                hist.set(
-                    { view: name, data: data },
-                    views[name].title || "Pushcue",
-                    !!views[name].append_data
-                );
+                if (views[name].onlyID && data.id) {
+                    hist.set(
+                        { view: name, data: { id: data.id } },
+                        views[name].title || "Pushcue",
+                        true
+                    );
+                } else {
+                    hist.set(
+                        { view: name, data: data },
+                        views[name].title || "Pushcue",
+                        !!views[name].append_data
+                    );
+                }
             }
             views[name].fn(data);
             console.log(name + ' rendered.');

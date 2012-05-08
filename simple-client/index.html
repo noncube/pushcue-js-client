@@ -64,7 +64,11 @@
             <p><input type="text" placeholder="username"
                 [% if (this.username) { %]value="[%= this.username %]" [% } %]/></p>
             <p><input type="password" placeholder="password" /></p>
-            <p><input  type="submit" value="login" class="submit-button" /></p>
+            <p>
+                <input  type="submit" value="login" class="submit-button" />
+                <a class="forgot">Forgot password?</a>
+            </p>
+
         </form>
     </div>
     <div class="col">
@@ -202,6 +206,37 @@
     <h2>Sorry, we can't find that.</h2>
 </script>
 
+<script type="text/template" id="forgot_tmpl">
+    <h2>Reset your password</h2>
+    [% if (!this.success) {%]
+    [% if (this.message) { %]
+    <p class="error">[%= this.message %]</p>
+    [% } %]
+    <form action="">
+        <p><input type="text" class="username" placeholder="username" /></p>
+        <p><input type="password" class="password" placeholder="password" /></p>
+        <p><input type="password" class="again" placeholder="password again" /></p>
+        <p><input type="submit" value="submit" class="submit-button" /></p>
+    </form>
+    [% } else { %]
+    <p>Your password has been reset. You may now login with your new password.</p>
+    [% } %]
+</script>
+
+<script type="text/template" id="forgot_form_tmpl">
+    <h2>Reset your password</h2>
+    [% if (!this.success) {%]
+    [% if (this.code) { %]
+    <p class="error">Invalid email address.</p>
+    [% } %]
+    <form action="">
+        <p><input type="text" placeholder="email" /></p>
+        <p><input type="submit" value="submit" class="submit-button" /></p>
+    </form>
+    [% } else { %]
+    <p>We've emailed a reset link to the email address provided.</p>
+    [% } %]
+</script>
 
 <script type="text/template" id="request_tmpl">
     <h2>Request an invitation</h2>

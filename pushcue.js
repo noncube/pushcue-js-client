@@ -304,7 +304,7 @@
                 }
             }));
 
-        _request({ path: '/requests', method: 'post' }, callback());
+        _request({ path: '/requests', method: 'post' }, callback);
     };
 
     pc.users = {
@@ -472,7 +472,56 @@
                 method: 'DELETE',
                 auth: true
             }, callback);
+        },
+        resetPasswordRequest: function(opts, callback) {
+            if (!callback)
+                throw new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing callback.',
+                    data: {
+                        callback: undefined
+                    }
+                });
+
+            if (!opts.email)
+                return callback(new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing a required parameter.',
+                    data: {
+                        email: opts.email
+                    }
+                }));
+
+            _request({ path: '/users/reset-password-request', method: 'post', data: opts }, callback);
+        },
+        resetPassword: function(opts, callback) {
+            if (!callback)
+                throw new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing callback.',
+                    data: {
+                        callback: undefined
+                    }
+                });
+
+            if (!opts.password || !opts.key || !opts.username)
+                return callback(new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing a required parameter.',
+                    data: {
+                        password: opts.password,
+                        key: opts.key,
+                        username: opts.username
+                    }
+                }));
+
+            _request({
+                path: '/users/reset-password/' + opts.key,
+                method: 'post',
+                data: { password: opts.password, username: opts.username }
+            }, callback);
         }
+
     };
 
     pc.uploads = {
