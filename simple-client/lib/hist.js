@@ -63,7 +63,7 @@
             var result = '', first = true;
             if (data && data.id) result += '/' + data.id;
             for (var key in data) {
-                if (data.hasOwnProperty(key) && key !== 'id') {
+                if (data.hasOwnProperty(key) && key !== 'id' && data[key] !== undefined) {
                     if (first) {
                         result += '?';
                         first = false;

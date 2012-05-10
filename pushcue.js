@@ -743,7 +743,7 @@
                     }
                 }));
 
-            _request({ path: '/bins/' + opts._id, method: 'POST', auth: true, data: opts }, callback);
+            _request({ path: '/bins/' + opts._id, method: 'PUT', auth: true, data: opts }, callback);
         },
 
         upload: function(opts, callback) {

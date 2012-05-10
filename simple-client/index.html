@@ -306,9 +306,19 @@
 </script>
 
 <script type="text/template" id="bin_tmpl">
-    <h2>[%= this.name %] Bin
-     <input type="text" class="tag-link" readonly="readonly" value="[%= this.link %]" size="[%= this.link.length-4 %]">
-    </h2>
+    <h2>[%= this.name %] Bin</h2>
+
+[% if (this.user && this.creator_id === this.user._id) { %]
+    <p>
+    <input type="text" class="tag-link" readonly="readonly" value="[%= this.link %]" size="[%= this.link.length-4 %]">
+    <br>
+  [% if (this.send_emails) { %]
+    Sending emails for new uploads. <a class="stop">stop</a>
+  [% } else { %]
+    Not sending emails. <a class="start">Send me emails for new uploads</a>
+  [% } %]
+    </p>
+[% } %]
     <form action="" class="file-upload">
         Upload: <input type="file" class="file-field"><input type="submit" value="upload">
     </form>
@@ -330,7 +340,10 @@
     <h2>Details for [%= this.name %]
         [% if (this.bin) { %]<span class="tag">[%= this.bin %]</span>[% } %]
     </h2>
-    <p><input type="text" class="tag-link" readonly="readonly" value="[%= this.link %]" size="[%= this.link.length-4 %]"></p>
+[% if (this.user && this.creator_id === this.user._id) { %]
+    <p>
+        <input type="text" class="tag-link" readonly="readonly" value="[%= this.link %]" size="[%= this.link.length-4 %]"></p>
+[% } %]
     <div class="details" id="detail-[%= this._id %]">
         <p><a href="[%= api_url %]/uploads/[%= this._id %]/download">Download</a></p>
         <!--<p><a href="#">Email</a></p>-->

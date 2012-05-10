@@ -493,6 +493,26 @@ $(document).ready(function(){
 
                     hist.update("Pushcue > bin > " + result.name);
                     util.render('bin_tmpl', result);
+
+                    if (user && user._id === result.creator_id) {
+                        if (result.send_emails) {
+                            $main.on('click.pushcue', ".stop", function() {
+                                util.clear();
+                                pushcue.bins.update({ _id: result._id, send_emails: false }, function(err) {
+                                    data.err = err;
+                                    view('bin', data);
+                                });
+                            });
+                        } else {
+                            $main.on('click.pushcue', ".start", function() {
+                                util.clear();
+                                pushcue.bins.update({ _id: result._id, send_emails: true }, function(err) {
+                                    data.err = err;
+                                    view('bin', data);
+                                });
+                            });
+                        }
+                    }
                     $main.on('submit.pushcue', "form", function() {
 
                         var $form = $(this),
