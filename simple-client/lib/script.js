@@ -60,7 +60,7 @@ $(document).ready(function(){
         // pagination on list view
         $page.on('click.pushcue','a.page', function() {
             var page = $(this).attr('id').substring(1);
-            view('list', page);
+            view('list', { page: page });
         });
 
         hist.hashChange = function(state) {
@@ -471,7 +471,7 @@ $(document).ready(function(){
 
         bin: {
             title: "Pushcue > loading bin...",
-            append_data: true,
+            onlyID: true,
             fn: function(data) {
                 if (pushcue.isAuthenticated()) {
                     util.nav.set('list', 'Home');
@@ -490,6 +490,17 @@ $(document).ready(function(){
                         }
                     }
                     result.link = util.getCurrentUrl('bin', data);
+
+                    // results from upload
+                    if (data.success) {
+                        result.success = true;
+                    }
+                    if (data.err) {
+                        result.err = data.err;
+                    }
+                    if (data.filename) {
+                        result.filename = data.filename;
+                    }
 
                     hist.update("Pushcue > bin > " + result.name);
                     util.render('bin_tmpl', result);
@@ -527,6 +538,13 @@ $(document).ready(function(){
                             },
                             function(err) {
                                 if (err) console.trace(err);
+                                data.filename = file.name;
+
+                                if (err) {
+                                    data.err = err;
+                                } else {
+                                    data.success = true;
+                                }
                                 view('bin', data);
                             }
                         );
@@ -562,11 +580,22 @@ $(document).ready(function(){
         list: {
             title: "Pushcue > my files",
             requireAuth: true,
-            fn: function(page) {
+            fn: function(obj) {
+                obj = obj || {};
                 util.nav.set('bins', 'Bins');
 
-                pushcue.uploads.all(page, function(err, res) {
+                pushcue.uploads.all(obj.page, function(err, res) {
                     if (!err) {
+                        // results from upload
+                        if (obj.success) {
+                            res.success = true;
+                        }
+                        if (obj.err) {
+                            res.err = obj.err;
+                        }
+                        if (obj.filename) {
+                            res.filename = obj.filename;
+                        }
                         util.render('files_tmpl', res);
                         $main.on('click.pushcue', ".files p a.item", function() {
                             var id = $(this).attr('id').substring(5);
@@ -585,8 +614,17 @@ $(document).ready(function(){
                                         progress: util.progress
                                     },
                                     function(err) {
-                                        if (err) console.trace(err);
-                                        view('list');
+                                        var data = {
+                                            page: obj.page,
+                                            filename: file.name
+                                        };
+                                        if (err) {
+                                            data.err = err;
+                                        } else {
+                                            data.success = true;
+                                        }
+
+                                        view('list', data);
                                     }
                                 );
                             }

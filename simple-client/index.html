@@ -255,6 +255,11 @@
 
 <script type="text/template" id="files_tmpl">
     <h2>Your Files</h2>
+[% if (this.success) { %]
+    <p>[%= this.filename %] has been uploaded.</p>
+[% } else if (this.filename) { %]
+    <p>Error - file [%= this.filename %] was not uploaded.</p>
+[% } %]
     <form action="" class="file-upload">
         Upload: <input type="file" class="file-field"><input type="submit" value="upload">
     </form>
@@ -319,6 +324,11 @@
   [% } %]
     </p>
 [% } %]
+    [% if (this.success) { %]
+    <p>[%= this.filename %] has been uploaded.</p>
+    [% } else if (this.filename) { %]
+    <p>Error - file [%= this.filename %] was not uploaded.</p>
+    [% } %]
     <form action="" class="file-upload">
         Upload: <input type="file" class="file-field"><input type="submit" value="upload">
     </form>
