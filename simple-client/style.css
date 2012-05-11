@@ -375,3 +375,7 @@ div.first {
     margin-bottom: 20px;
     font-size: 16px;
 }
+
+.hidden {
+    display: none;
+}

@@ -647,8 +647,8 @@ $(document).ready(function(){
 
         uploads: {
             title: "Pushcue > loading file...",
-            append_data: true,
-            fn: function(id) {
+            onlyID: true,
+            fn: function(obj) {
                 if (pushcue.isAuthenticated()) {
                     util.nav.set('list', 'Home');
                     util.nav.add('bins', 'Bins');
@@ -656,20 +656,50 @@ $(document).ready(function(){
                     util.nav.set('login', 'Login or Register');
                 }
 
-                pushcue.uploads.get(id, function(err, res) {
+                pushcue.uploads.get(obj, function(err, res) {
                     if (!err) {
                         hist.update("Pushcue > file > " + res.name);
-                        res.link = util.getCurrentUrl('uploads', id);
+                        res.link = util.getCurrentUrl('uploads', obj);
                         util.render('detail_tmpl', res);
+
                         $main.on('click.pushcue', "div.details p a.delete", function() {
-                            var id = $main.find('.details').attr('id').substring(7);
-                            view('delete_upload', id);
+                            view('delete_upload', obj.id);
                         });
+
+                        $main.on('click.pushcue', "div.details p a.password", function() {
+                            view('password_upload', { id: obj.id, filename: res.name });
+                        });
+
+                        if (obj.password) {
+                            // on download, if password is required, must use a post.
+                            $main.on('click.pushcue', "div.details p a.download", function() {
+                                var $form = $('<form method="post" class="hidden"></form>');
+                                $form.attr('action', api_url + '/uploads/'+ obj.id + '/download');
+                                $form.append($('<input name="password" value="'+obj.password+'">'));
+
+                                $main.append($form);
+                                setTimeout(function(){$form.submit();}, 10);
+
+                                return false;
+                            });
+                        }
+
                     } else {
                         if (err.status === 404) {
                             view('not_found');
+
+                        // passworded file, not owner
+                        } else if (err.status === 403) {
+                            util.render('submit_password_tmpl', { id: obj.id, err: !!obj.password });
+
+                            $main.on('submit.pushcue', "form", function() {
+                                var password = $(this).find('.password').val();
+                                view('uploads', { id: obj.id, password: password });
+                                return false;
+                            });
+
                         } else {
-                            console.trace(err);
+                            console.log(err);
                         }
                         // todo: better errors, possible 500 or notauthorized (ask for password)
                     }
@@ -689,6 +719,45 @@ $(document).ready(function(){
                         // todo: better errors, possible 404, 500, or notauthorized
                         console.error(err);
                     }
+                });
+            }
+        },
+
+        password_upload: {
+            requireAuth: true,
+            append_data: true,
+            fn: function(obj) {
+                if (!obj || !obj.id) {
+                    return view('list');
+                }
+                util.nav.set('list', 'Home');
+                util.render('password_file_tmpl', obj);
+
+                $main.on('click.pushcue', '.return', function() {
+                    view('uploads', { id: obj.id });
+                });
+
+                $main.on('submit.pushcue', "form", function() {
+                    var $form = $(this),
+                        password = $form.find('.password').val(),
+                        check = $form.find('.check').val();
+
+                    if (check !== password) {
+                        obj.err = "Both passwords must match";
+                        view('password_upload', obj);
+                    } else {
+                        pushcue.uploads.update({id: obj.id, password: password}, function(err) {
+                            if (err) {
+                                obj.err = err.message || err;
+                                view('password_upload', obj);
+                            } else {
+                                delete obj.err;
+                                obj.success = true;
+                                view('password_upload', obj);
+                            }
+                        });
+                    }
+                    return false;
                 });
             }
         }

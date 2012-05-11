@@ -355,13 +355,41 @@
         <input type="text" class="tag-link" readonly="readonly" value="[%= this.link %]" size="[%= this.link.length-4 %]"></p>
 [% } %]
     <div class="details" id="detail-[%= this._id %]">
-        <p><a href="[%= api_url %]/uploads/[%= this._id %]/download">Download</a></p>
-        <!--<p><a href="#">Email</a></p>-->
-        <!--<p><a href="#">Copy Link</a></p>-->
-        <p><a href="#">Add Password</a></p>
-        <p><a class="delete link">Delete</a></p>
+        <p><a href="[%= api_url %]/uploads/[%= this._id %]/download" class="download">Download</a></p>
+[% if (this.user && this.creator_id === this.user._id) { %]
+        <p><a class="password">Add Password</a></p>
+        <p><a class="delete">Delete</a></p>
+[% } %]
     </div>
 </script>
+
+<script type="text/template" id="password_file_tmpl">
+    <h2>Set password for [%= this.filename %]</h2>
+    [% if (!this.success) {%]
+    [% if (this.err) { %]
+    <p class="error">[%= this.err %]</p>
+    [% } %]
+    <form action="">
+        <p><input type="password" class="password" placeholder="password" /></p>
+        <p><input type="password" class="check" placeholder="password again" /></p>
+        <p><input type="submit" value="submit" class="submit-button" /></p>
+    </form>
+    [% } else { %]
+    <p>You've set the password for [%= this.filename %]. <a class="return">Return to file</a></p>
+    [% } %]
+</script>
+
+<script type="text/template" id="submit_password_tmpl">
+    <h2>Password required</h2>
+    [% if (this.err) { %]
+    <p class="error">Invalid password.</p>
+    [% } %]
+    <form action="">
+        <p><input type="password" class="password" placeholder="password" /></p>
+        <p><input type="submit" value="submit" class="submit-button" /></p>
+    </form>
+</script>
+
 <script type="text/template" id="not_supported_tmpl">
     <p>
         Sorry, your browser is not supported.
