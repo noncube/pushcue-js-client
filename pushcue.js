@@ -1,23 +1,41 @@
 /*global $xhr:false */
-//
-// Client-side JS Pushcue API library
-//
-// Requires xhr2lib
-// https://github.com/p-m-p/xhr2-lib
-(function(main){
-    'use strict';
-    var pc = main.pushcue = {}; // Public API
+// client-side requires our custom xhr2lib,
+// server-side requires 'request' module
+(function() {
+    var request,
+        pc = {},
+        user = {},
+        conf = { host: 'api.pushcue.com', port: 80, secure: false, chunksize: 1024*512 /*512 KB*/ },
+        nodejs = false;
 
-    if (!window.$xhr || !$xhr.supported()) {
-        return;
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = pc;
+        request = require('request');
+        nodejs = true;
+    } else {
+        window.pushcue = pc;
+        request = function(opts) {
+            $xhr.ajax(opts);
+        };
+        if (!window.$xhr || !$xhr.supported()) {
+            return;
+        }
+
+        pc.supported = true;
     }
 
-    pc.supported = true;
-
-    // Configuration (private)
-    //------------------------------------------------------------------------/
-    var user = {}, // hold user auth
-        conf = { host: 'api.pushcue.com', port: 80, secure: false, chunksize: 1024*512 /*512 KB*/ };
+    var success_handler = function(callback) { // <this> is the xhr
+        return function(data) {
+            data = data || {};
+            data.status = this.status;
+            callback(undefined, data);
+        };
+    };
+    var error_handler = function(callback) { // <this> is the xhr
+        return function(statusText, status) { //todo: add another option for timeout
+            callback.call(this, parseErrorResult(this.responseText, status));
+        };
+    };
 
     conf.url = function(secure){
         var secure_required = secure || this.secure;
@@ -41,6 +59,10 @@
         conf.host = opts.host || conf.host;
         conf.port = opts.port || conf.port;
         conf.secure = opts.secure || conf.secure;
+        conf.chunksize = opts.chunksize || conf.chunksize;
+
+        if (opts.returnDomain)
+            conf.returnDomain = 'http'+ (conf.secure ? 's' : '') + '://' + opts.returnDomain;
     };
 
     // Pushcue Errors
@@ -73,44 +95,67 @@
                 error.data = data;
             }
         } else {
-            error.code = error.data.code || error.code;
-            error.message = error.data.message || error.message;
-            error.status = error.status || error.data.status;
+            error.data = data;
+            error.code = data.code || error.code;
+            error.message = data.message || error.message;
+            error.status = status || error.status;
         }
 
         return error;
     };
 
-    // $xhr response callback wrappers
-    //------------------------------------------------------------------------/
-    var success_handler = function(callback) { // <this> is the xhr
-        return function(data) {
-            data = data || {};
-            data.status = this.status;
-            callback(undefined, data);
-        };
-    };
-    var error_handler = function(callback) { // <this> is the xhr
-        return function(statusText, status) { //todo: add another option for timeout
-            callback.call(this, parseErrorResult(this.responseText, status));
+    var requestHandler = function(cb) {
+        return function (error, response, body) {
+            if (response.statusCode >= 300) {
+                cb(parseErrorResult(response.body, response.statusCode));
+            } else {
+                if (typeof body !== 'object') {
+                    var temp;
+                    try {
+                        temp = JSON.parse(body);
+                        body = temp;
+                    } catch(e) {}
+                }
+                cb(undefined, body);
+            }
         };
     };
 
-    // $xhr wrapper
+    // request wrapper
     //------------------------------------------------------------------------/
-    var _request = function(opts, callback) {
+    var _request = function(opts, cb) {
         var settings = {
             url: conf.url() + opts.path,
             type: opts.method,
-            dataType: opts.dataType || 'json',
             headers: opts.headers || {},
             timeout: opts.timeout || 5000,
-            success: success_handler(callback),
-            error: error_handler(callback)
+            method: opts.method
         };
 
-        if (opts.data)
-            settings.data = opts.data;
+        if (!nodejs) {
+            settings = {
+                url: conf.url() + opts.path,
+                type: opts.method,
+                dataType: opts.dataType || 'json',
+                headers: opts.headers || {},
+                timeout: opts.timeout || 5000,
+                success: success_handler(cb),
+                error: error_handler(cb)
+            };
+            if (opts.data)
+                settings.data = opts.data;
+        } else {
+            settings = {
+                url: conf.url() + opts.path,
+                type: opts.method,
+                headers: opts.headers || {},
+                timeout: opts.timeout || 5000,
+                method: opts.method
+            };
+            if (opts.data)
+                settings.json = opts.data;
+        }
+
 
         if (opts.progress)
             settings.progress = opts.progress;
@@ -121,7 +166,7 @@
                 settings.headers['PC-TOKEN'] = user['PC-TOKEN'];
 
             } else if (opts.auth !== 'maybe') {
-                return callback(new PushcueError({
+                return cb(new PushcueError({
                     code: 'missing_auth',
                     message: 'You must be logged in for this action.'
                 }));
@@ -133,9 +178,8 @@
             settings.data = opts.file;
         }
 
-        $xhr.ajax(settings);
+        request(settings, requestHandler(cb));
     };
-
 
     // recursive chunked upload
     var _chunked_request = function(opts, callback) {
@@ -171,8 +215,8 @@
             count++;
 
             var chunk = (file.mozSlice) ? file.mozSlice(start, end) :
-                        (file.webkitSlice) ? file.webkitSlice(start, end) :
-                        (file.slice) ? file.slice(start, cSize) :
+                (file.webkitSlice) ? file.webkitSlice(start, end) :
+                    (file.slice) ? file.slice(start, cSize) :
                         undefined;
 
             baseSettings.url = baseUrl + '/?start=' + start;
@@ -218,7 +262,6 @@
 
         xhrPart(opts.file, 0);
     };
-
     // Main public API
     //------------------------------------------------------------------------/
     pc.isAuthenticated = function () {
@@ -239,16 +282,16 @@
     };
 
     // Authenticate a user to the service.
-    // Requires opts.username && opts.password && callback
-    pc.auth = function(opts, callback) {
-        if (!opts || !opts.username || !opts.password || !callback)
-            return callback(new PushcueError({
+    // Requires opts.username && opts.password && cb
+    pc.auth = function(opts, cb) {
+        if (!opts || !opts.username || !opts.password || !cb)
+            return cb(new PushcueError({
                 code: 'missing_param',
-                message: 'Missing username, password, or callback.',
+                message: 'Missing username, password, or cb.',
                 data: {
                     username: opts && opts.username,
                     password: opts && opts.password,
-                    callback: callback ? true : undefined
+                    cb: cb ? true : undefined
                 }
             }));
 
@@ -263,90 +306,92 @@
                         err = parseErrorResult(data);
                     }
                 }
-                callback(err);
+                cb(err, data);
             }
         );
     };
 
     // Logout current user (invalidate current api token)
-    pc.deAuth = function(callback) {
-        if (!callback)
+    pc.deAuth = function(cb) {
+        if (!cb)
             throw new PushcueError({
                 code: 'missing_param',
-                message: 'Missing callback.',
+                message: 'Missing cb.',
                 data: {
-                    callback: undefined
+                    cb: undefined
                 }
             });
 
         _request({ path: '/logout', method: 'post', auth: true }, function(err) {
             if (!err) user = {};
-            callback(err);
+            cb(err);
         });
     };
 
-    pc.requestInvitation = function(email, callback) {
-        if (!callback)
+    pc.requestInvitation = function(email, cb) {
+        if (!cb)
             throw new PushcueError({
                code: 'missing_param',
-               message: 'Missing callback.',
+               message: 'Missing cb.',
                data: {
-                   callback: undefined
+                   cb: undefined
                }
            });
 
         if (!email)
-            return callback(new PushcueError({
+            return cb(new PushcueError({
                 code: 'missing_param',
                 message: 'Missing a required parameter.',
                 data: {
-                    email: email
+                    email: email,
+                    path: conf.returnDomain
                 }
             }));
 
-        _request({ path: '/requests', method: 'post' }, callback);
+        _request({ path: '/requests', method: 'post' }, cb);
     };
 
     pc.users = {
         // Create new user
-        // Requires opts.username && opts.password && opts.email && opts.invite && callback
-        create: function(opts, callback) {
-            if (!opts || !callback)
+        // Requires opts.username && opts.password && opts.email && opts.invite && cb
+        create: function(opts, cb) {
+            if (!opts || !cb)
                 throw new PushcueError({
                     code: 'missing_param',
-                    message: 'Missing opts or callback.',
+                    message: 'Missing opts or cb.',
                     data: {
                         opts: opts,
-                        callback: callback ? true : undefined
+                        cb: cb ? true : undefined
                     }
                 });
 
             if (!opts.username || !opts.password || !opts.email || !opts.invite)
-                return callback(new PushcueError({
+                return cb(new PushcueError({
                     code: 'missing_param',
                     message: 'Missing a required parameter.',
                     data: {
                         username: opts.username,
                         password: opts.password,
                         email: opts.email,
-                        invite: opts.invite
+                        invite: opts.invite,
+                        path: opts.path
                     }
                 }));
 
-            _request({ path: '/users', method: 'POST', data: opts }, callback);
+            _request({ path: '/users', method: 'POST', data: opts }, cb);
         },
-        subscribe: function(opts, callback) {
-            if (!callback)
+        subscribe: function(opts, cb) {
+            if (!cb)
                 throw new PushcueError({
                     code: 'missing_param',
-                    message: 'Missing callback.',
+                    message: 'Missing cb.',
                     data: {
-                        callback: callback ? true : undefined
+                        cb: cb ? true : undefined
                     }
                 });
 
             if (!opts.token && !opts.promo)
-                return callback(new PushcueError({
+                return cb(new PushcueError({
                     code: 'missing_param',
                     message: 'Missing a required parameter (token or promo).',
                     data: {
@@ -367,20 +412,20 @@
                  method: 'POST',
                  auth: true,
                  data: data
-             }, callback);
+             }, cb);
         },
-        update_payment: function(opts, callback) {
-            if (!callback)
+        update_payment: function(opts, cb) {
+            if (!cb)
                 throw new PushcueError({
                     code: 'missing_param',
-                    message: 'Missing callback.',
+                    message: 'Missing cb.',
                     data: {
-                        callback: callback ? true : undefined
+                        cb: cb ? true : undefined
                     }
                 });
 
             if (!opts.token)
-                return callback(new PushcueError({
+                return cb(new PushcueError({
                     code: 'missing_param',
                     message: 'Missing a required parameter (token).',
                     data: {
@@ -394,15 +439,15 @@
                 method: 'POST',
                 auth: true,
                 data: data
-            }, callback);
+            }, cb);
         },
-        unsubscribe: function(callback) {
-            if (!callback)
+        unsubscribe: function(cb) {
+            if (!cb)
                 throw new PushcueError({
                     code: 'missing_param',
-                    message: 'Missing callback.',
+                    message: 'Missing cb.',
                     data: {
-                        callback: callback ? true : undefined
+                        cb: cb ? true : undefined
                     }
                 });
 
@@ -410,21 +455,21 @@
                 path: '/users/unsubscribe',
                 method: 'POST',
                 auth: true
-            }, callback);
+            }, cb);
         },
-        update: function(opts, callback) {
-            if (!opts || !callback)
+        update: function(opts, cb) {
+            if (!opts || !cb)
                 throw new PushcueError({
                     code: 'missing_param',
-                    message: 'Missing opts or callback.',
+                    message: 'Missing opts or cb.',
                     data: {
                         opts: opts,
-                        callback: callback ? true : undefined
+                        cb: cb ? true : undefined
                     }
                 });
 
             if (!opts.password)
-                return callback(new PushcueError({
+                return cb(new PushcueError({
                     code: 'missing_param',
                     message: 'Missing a required parameter.',
                     data: {
@@ -437,16 +482,16 @@
                  method: 'PUT',
                  auth: true,
                  data: opts
-             }, callback);
+             }, cb);
         },
         // Get current user
-        'get': function(callback) {
-            if (!callback)
+        'get': function(cb) {
+            if (!cb)
                 throw new PushcueError({
                     code: 'missing_param',
-                    message: 'Missing callback.',
+                    message: 'Missing cb.',
                     data: {
-                        callback: undefined
+                        cb: undefined
                     }
                 });
 
@@ -454,16 +499,16 @@
                 path: '/users/' + user['PC-ID'],
                 method: 'GET',
                 auth: true
-            }, callback);
+            }, cb);
         },
         // Delete current user
-        del: function(callback) {
-            if (!callback)
+        del: function(cb) {
+            if (!cb)
                 throw new PushcueError({
                     code: 'missing_param',
-                    message: 'Missing callback.',
+                    message: 'Missing cb.',
                     data: {
-                        callback: undefined
+                        cb: undefined
                     }
                 });
 
@@ -471,20 +516,20 @@
                 path: '/users/' + user.username,
                 method: 'DELETE',
                 auth: true
-            }, callback);
+            }, cb);
         },
-        resetPasswordRequest: function(opts, callback) {
-            if (!callback)
+        resetPasswordRequest: function(opts, cb) {
+            if (!cb)
                 throw new PushcueError({
                     code: 'missing_param',
-                    message: 'Missing callback.',
+                    message: 'Missing cb.',
                     data: {
-                        callback: undefined
+                        cb: undefined
                     }
                 });
 
             if (!opts.email)
-                return callback(new PushcueError({
+                return cb(new PushcueError({
                     code: 'missing_param',
                     message: 'Missing a required parameter.',
                     data: {
@@ -492,20 +537,22 @@
                     }
                 }));
 
-            _request({ path: '/users/reset-password-request', method: 'post', data: opts }, callback);
+            opts.path = conf.returnDomain + opts.path;
+
+            _request({ path: '/users/reset-password-request', method: 'post', data: opts }, cb);
         },
-        resetPassword: function(opts, callback) {
-            if (!callback)
+        resetPassword: function(opts, cb) {
+            if (!cb)
                 throw new PushcueError({
                     code: 'missing_param',
-                    message: 'Missing callback.',
+                    message: 'Missing cb.',
                     data: {
-                        callback: undefined
+                        cb: undefined
                     }
                 });
 
             if (!opts.password || !opts.key || !opts.username)
-                return callback(new PushcueError({
+                return cb(new PushcueError({
                     code: 'missing_param',
                     message: 'Missing a required parameter.',
                     data: {
@@ -519,27 +566,80 @@
                 path: '/users/reset-password/' + opts.key,
                 method: 'post',
                 data: { password: opts.password, username: opts.username }
-            }, callback);
+            }, cb);
+        },
+
+        resendActivation: function(opts, cb) {
+            if (!cb)
+                throw new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing cb.',
+                    data: {
+                        cb: undefined
+                    }
+                });
+
+            if (!opts.email)
+                return cb(new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing a required parameter.',
+                    data: {
+                        email: opts.email
+                    }
+                }));
+
+            _request({
+                path: '/users/resend-activation/',
+                method: 'post',
+                data: { email: opts.email, path: conf.returnDomain + opts.path }
+            }, cb);
+        },
+
+        activate: function(opts, cb) {
+            if (!cb)
+                throw new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing cb.',
+                    data: {
+                        cb: undefined
+                    }
+                });
+
+            if (!opts.id || !opts.key)
+                return cb(new PushcueError({
+                    code: 'missing_param',
+                    message: 'Missing a required parameter.',
+                    data: {
+                        id: opts.id,
+                        key: opts.key
+                    }
+                }));
+
+            _request({
+                path: '/users/' + opts.id + '/activation/',
+                method: 'post',
+                data: { key: opts.key }
+            }, cb);
         }
 
     };
 
     pc.uploads = {
         // Get current user's uploads
-        all: function(page, callback) {
+        all: function(page, cb) {
             page = page || 1;
             if (typeof page === 'function') {
-                callback = page;
+                cb = page;
                 page = 1;
             }
 
-            if (!callback)
+            if (!cb)
                 throw new PushcueError({
                     code: 'missing_param',
-                    message: 'Missing page/callback.',
+                    message: 'Missing page/cb.',
                     data: {
                         page: page,
-                        callback: callback ? true : undefined
+                        cb: cb ? true : undefined
                     }
                 });
 
@@ -547,8 +647,34 @@
                 path: '/uploads' + '?page=' + page,
                 method: 'GET',
                 auth: true
-            }, callback);
+            }, cb);
         },
+
+        'get': function(opts, cb) {
+            if (!cb || !opts.id)
+                throw new PushcueError({
+                   code: 'missing_param',
+                   message: 'Missing id or cb.',
+                   data: {
+                       id: opts.id,
+                       cb: cb ? true : undefined
+                   }
+               });
+
+            var settings = {
+                path: '/uploads/' + opts.id,
+                method: 'GET',
+                auth: 'maybe'
+            };
+
+            if (opts.password) { // support for 3rd party users opening passworded file
+                settings.method = 'POST';
+                settings.data = {password: opts.password};
+            }
+
+            _request(settings, cb);
+        },
+
 
         create: function(opts, callback) {
             // file needs to be instanceof File
@@ -567,40 +693,15 @@
             _chunked_request(opts, callback);
         },
 
-        'get': function(opts, callback) {
-            if (!callback || !opts.id)
+        download: function(opts, cb) { // on success, return should be raw file
+            if (!cb || !opts.id)
                 throw new PushcueError({
                    code: 'missing_param',
-                   message: 'Missing id or callback.',
-                   data: {
-                       id: opts.id,
-                       callback: callback ? true : undefined
-                   }
-               });
-
-            var settings = {
-                path: '/uploads/' + opts.id,
-                method: 'GET',
-                auth: 'maybe'
-            };
-
-            if (opts.password) { // support for 3rd party users opening passworded file
-                settings.method = 'POST';
-                settings.data = {password: opts.password};
-            }
-
-            _request(settings, callback);
-        },
-
-        download: function(opts, callback) { // on success, return should be raw file
-            if (!callback || !opts.id)
-                throw new PushcueError({
-                   code: 'missing_param',
-                   message: 'Missing id, filename, or callback.',
+                   message: 'Missing id, filename, or cb.',
                    data: {
                        id: opts.id,
                        filename: opts.filename,
-                       callback: callback ? true : undefined
+                       cb: cb ? true : undefined
                    }
                });
             var filename = opts.filename || '';
@@ -616,22 +717,22 @@
                 settings.data = {password: opts.password};
             }
 
-            _request(settings, callback);
+            _request(settings, cb);
         },
 
-        update: function(opts, callback) {
-            if (!callback || !opts.id)
+        update: function(opts, cb) {
+            if (!cb || !opts.id)
                 throw new PushcueError({
                    code: 'missing_param',
-                   message: 'Missing id or callback.',
+                   message: 'Missing id or cb.',
                    data: {
                        id: opts.id,
-                       callback: callback ? true : undefined
+                       cb: cb ? true : undefined
                    }
                });
 
             if (!opts.password) {
-                return callback(new PushcueError({
+                return cb(new PushcueError({
                     code: 'missing_param',
                     message: 'New password is required.',
                     data: {password: opts.password}
@@ -643,17 +744,17 @@
                 method: 'PUT',
                 auth: true,
                 data: { password: opts.password }
-            }, callback);
+            }, cb);
         },
-        del: function(id, callback) {
+        del: function(id, cb) {
 
-            if (!id || !callback)
+            if (!id || !cb)
                 throw new PushcueError({
                    code: 'missing_param',
-                   message: 'Missing id or callback.',
+                   message: 'Missing id or cb.',
                    data: {
                        id: id,
-                       callback: callback ? true : undefined
+                       cb: cb ? true : undefined
                    }
                });
 
@@ -661,17 +762,17 @@
                 path: '/uploads/' + id,
                 method: 'DELETE',
                 auth: true
-            }, callback);
+            }, cb);
         }
     };
     pc.bins = {
-        all: function(callback) {
-            if (!callback)
+        all: function(cb) {
+            if (!cb)
                 throw new PushcueError({
                     code: 'missing_param',
-                    message: 'Missing page/callback.',
+                    message: 'Missing page/cb.',
                     data: {
-                        callback: callback ? true : undefined
+                        cb: cb ? true : undefined
                     }
                 });
 
@@ -679,16 +780,16 @@
                 path: '/bins',
                 method: 'GET',
                 auth: true
-            }, callback);
+            }, cb);
         },
-        'get': function(id, callback) {
-            if (!callback || !id)
+        'get': function(id, cb) {
+            if (!cb || !id)
                 throw new PushcueError({
                     code: 'missing_param',
-                    message: 'Missing id or callback.',
+                    message: 'Missing id or cb.',
                     data: {
                         id: id,
-                        callback: callback ? true : undefined
+                        cb: cb ? true : undefined
                     }
                 });
 
@@ -698,21 +799,21 @@
                 auth: 'maybe'
             };
 
-            _request(settings, callback);
+            _request(settings, cb);
         },
-        create: function(opts, callback) {
-            if (!opts || !callback)
+        create: function(opts, cb) {
+            if (!opts || !cb)
                 throw new PushcueError({
                     code: 'missing_param',
-                    message: 'Missing opts or callback.',
+                    message: 'Missing opts or cb.',
                     data: {
                         opts: opts,
-                        callback: callback ? true : undefined
+                        cb: cb ? true : undefined
                     }
                 });
 
             if (!opts.name)
-                return callback(new PushcueError({
+                return cb(new PushcueError({
                     code: 'missing_param',
                     message: 'Missing a required parameter.',
                     data: {
@@ -720,22 +821,22 @@
                     }
                 }));
 
-            _request({ path: '/bins', method: 'POST', auth: true, data: opts }, callback);
+            _request({ path: '/bins', method: 'POST', auth: true, data: opts }, cb);
         },
 
-        update: function(opts, callback) {
-            if (!opts || !callback)
+        update: function(opts, cb) {
+            if (!opts || !cb)
                 throw new PushcueError({
                     code: 'missing_param',
-                    message: 'Missing opts or callback.',
+                    message: 'Missing opts or cb.',
                     data: {
                         opts: opts,
-                        callback: callback ? true : undefined
+                        cb: cb ? true : undefined
                     }
                 });
 
             if (!opts._id)
-                return callback(new PushcueError({
+                return cb(new PushcueError({
                     code: 'missing_param',
                     message: 'Missing a required parameter.',
                     data: {
@@ -743,7 +844,7 @@
                     }
                 }));
 
-            _request({ path: '/bins/' + opts._id, method: 'PUT', auth: true, data: opts }, callback);
+            _request({ path: '/bins/' + opts._id, method: 'PUT', auth: true, data: opts }, cb);
         },
 
         upload: function(opts, callback) {
@@ -768,9 +869,6 @@
 
             _chunked_request(opts, callback);
         }
-
     };
 
-    main.pushcue = pc;
-
-})(window);
+}).call(this);
