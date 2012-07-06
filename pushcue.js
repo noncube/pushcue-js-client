@@ -1,5 +1,5 @@
 /*global $xhr:false */
-// client-side requires our custom xhr2lib,
+// client-side requires our custom netlib,
 // server-side requires 'request' module
 (function() {
     var request,
@@ -8,34 +8,23 @@
         conf = { host: 'api.pushcue.com', port: 80, secure: false, chunksize: 1024*512 /*512 KB*/ },
         nodejs = false;
 
-    if (typeof module !== 'undefined' && module.exports) {
+    if (typeof module !== 'undefined' && module.exports && typeof require !== 'undefined') {
         module.exports = pc;
         request = require('request');
         nodejs = true;
     } else {
         window.pushcue = pc;
-        request = function(opts) {
-            $xhr.ajax(opts);
+        request = function(opts, cb) {
+            return new $xhr(opts, cb);
         };
-        if (!window.$xhr || !$xhr.supported()) {
+        if (!window.$xhr) {
+            console.log('xhr2 lib missing.');
             return;
         }
 
         pc.supported = true;
+        pc.fallback = !$xhr.supported();
     }
-
-    var success_handler = function(callback) { // <this> is the xhr
-        return function(data) {
-            data = data || {};
-            data.status = this.status;
-            callback(undefined, data);
-        };
-    };
-    var error_handler = function(callback) { // <this> is the xhr
-        return function(statusText, status) { //todo: add another option for timeout
-            callback.call(this, parseErrorResult(this.responseText, status));
-        };
-    };
 
     conf.url = function(secure){
         var secure_required = secure || this.secure;
@@ -106,7 +95,12 @@
 
     var requestHandler = function(cb) {
         return function (error, response, body) {
-            if (response.statusCode >= 300) {
+            if (!nodejs) {
+                error = error && parseErrorResult(error, error.status);
+                return cb(error, response);
+            }
+
+            if (response && response.statusCode >= 300) {
                 cb(parseErrorResult(response.body, response.statusCode));
             } else {
                 if (typeof body !== 'object') {
@@ -125,37 +119,19 @@
     //------------------------------------------------------------------------/
     var _request = function(opts, cb) {
         var settings = {
-            url: conf.url() + opts.path,
             type: opts.method,
             headers: opts.headers || {},
             timeout: opts.timeout || 5000,
             method: opts.method
         };
-
-        if (!nodejs) {
-            settings = {
-                url: conf.url() + opts.path,
-                type: opts.method,
-                dataType: opts.dataType || 'json',
-                headers: opts.headers || {},
-                timeout: opts.timeout || 5000,
-                success: success_handler(cb),
-                error: error_handler(cb)
-            };
-            if (opts.data)
-                settings.data = opts.data;
+        if (!nodejs && pc.fallback) {
+            settings.url = conf.url() + '/api' + opts.path;
         } else {
-            settings = {
-                url: conf.url() + opts.path,
-                type: opts.method,
-                headers: opts.headers || {},
-                timeout: opts.timeout || 5000,
-                method: opts.method
-            };
-            if (opts.data)
-                settings.json = opts.data;
+            settings.url = conf.url() + opts.path;
         }
 
+        if (opts.data)
+            settings.json = opts.data;
 
         if (opts.progress)
             settings.progress = opts.progress;
@@ -234,30 +210,29 @@
                     opts.progress(percent);
                 };
 
-            baseSettings.success = function(data) {
-                if (!last) {
-                    if (!key)
-                        key = data.key;
-
-                    xhrPart(file, end);
-
+            request(baseSettings, requestHandler(function(error, response) {
+                if (error) {
+                    count--;
+                    if (!finished && retries > 0) {
+                        retries--;
+                        xhrPart(file, start);
+                    } else if (!finished) {
+                        callback(error);
+                    }
                 } else {
-                    finished = true;
-                    if (opts.progress) opts.progress(100);
-                    callback(undefined, data);
-                }
-            };
-            baseSettings.error = function(statusText, status) {
-                count--;
-                if (!finished && retries > 0) {
-                    retries--;
-                    xhrPart(file, start);
-                } else if (!finished) {
-                    callback.call(this, parseErrorResult(this.responseText, status));
-                }
-            };
+                    if (!last) {
+                        if (!key)
+                            key = response.key;
 
-            $xhr.ajax(baseSettings);
+                        xhrPart(file, end);
+
+                    } else {
+                        finished = true;
+                        if (opts.progress) opts.progress(100);
+                        callback(undefined, response);
+                    }
+                }
+            }));
         };
 
         xhrPart(opts.file, 0);
@@ -348,7 +323,7 @@
                 }
             }));
 
-        _request({ path: '/requests', method: 'post' }, cb);
+        _request({ path: '/requests', method: 'post', data: { email: email }}, cb);
     };
 
     pc.users = {
@@ -730,12 +705,14 @@
                        cb: cb ? true : undefined
                    }
                });
-
-            if (!opts.password) {
+            if (!opts.password && !opts.email) {
                 return cb(new PushcueError({
                     code: 'missing_param',
                     message: 'New password is required.',
-                    data: {password: opts.password}
+                    data: {
+                        password: opts.password,
+                        email: opts.email
+                    }
                 }));
             }
 
@@ -743,7 +720,7 @@
                 path: '/uploads/' + opts.id,
                 method: 'PUT',
                 auth: true,
-                data: { password: opts.password }
+                data: { password: opts.password, email: opts.email }
             }, cb);
         },
         del: function(id, cb) {

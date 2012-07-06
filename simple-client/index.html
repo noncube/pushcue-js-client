@@ -54,11 +54,47 @@
     </footer>
 </div>
 
+<script type="text/template" id="resend_activation_tmpl">
+    <h2>Resend Account Activation Email</h2>
+    [% if (this.success) { %]
+    <p>Success! Check your email for the activation link.</p>
+    [% } else { %]
+        [% if (this.message) { %]
+            <p>[%= this.message %]</p>
+        [% } %]
+        <form action="">
+            <p><input type="text" placeholder="email" class="r_email" /></p>
+            <p>
+                <input  type="submit" value="resend" class="submit-button" />
+            </p>
+
+        </form>
+    [% } %]
+
+</script>
+
+<script type="text/template" id="activate_tmpl">
+    <h2>Activate your account</h2>
+    [% if (this.success) { %]
+    <p>Success! You may now login.</p>
+    [% } else { %]
+    <p>[%= this.message %]</p>
+    [% } %]
+
+</script>
+
 <script type="text/template" id="login_tmpl">
     <div class="col first">
         <h2>Please login</h2>
         [% if (this.form === 'login') { %]
-        <p class="error">Invalid username/password.</p>
+            [% if (this.code === 'not_activated') { %]
+            <p class="error">
+                Account not activated. Check your inbox for the activation email,
+                or click <a class="resend">here</a> to send a new one.
+            </p>
+            [% } else { %]
+            <p class="error">Invalid username/password.</p>
+            [% } %]
         [% } %]
         <form action="" class="login">
             <p><input type="text" placeholder="username"
@@ -87,7 +123,7 @@
         [% } %]
 
         [% if (this.success) { %]
-        <p>Success! You may now use the form on the left to login.</p>
+        <p>Success! Please activate your account with the email we sent you.</p>
         [% } else {  if (!this.data) { this.data = {}; } %]
 
         <form action="" class="register">
@@ -404,7 +440,7 @@
 <script type="text/javascript" src="lib/hist.js"></script>
 
 <script type="text/javascript" src="lib/ejs_production.js"></script>
-<script type="text/javascript" src="lib/xhr2lib.js"></script>
+<script type="text/javascript" src="lib/netlib.js"></script>
 <script type="text/javascript" src="lib/pushcue.js"></script>
 <script type="text/javascript" src="https://js.stripe.com/v1/"></script>
 

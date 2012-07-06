@@ -95,7 +95,7 @@
                 if (hashObj[1]) {
                     hashObj = hashObj[1].split(state_split);
 
-                    for (var i=1; i < hashObj.length; i++) {
+                    for (var i=0; i < hashObj.length; i++) {
                         if (!state) state = {};
                         key = hashObj[i].split('=')[0];
                         state[key] = hashObj[i].split('=')[1];

@@ -178,7 +178,7 @@ $(document).ready(function(){
                         } else {
                             err.form = 'login';
                             err.username = data.username;
-                            view('login',err);
+                            view('login', err);
                         }
                     });
                     return false;
@@ -193,11 +193,12 @@ $(document).ready(function(){
                             invite: $form.find('.r_key').val()
                         };
                     pushcue.users.create(data, function(err) {
-                        if (err)
+                        if (err) {
+                            console.log(err);
+                            console.log(err.data);
                             err.form = 'register';
+                        }
                         err = err || {success: true};
-                        console.log(err);
-                        console.log(err.data);
                         view('login', err);
                     });
                     return false;
@@ -208,6 +209,40 @@ $(document).ready(function(){
                 $main.on('click.pushcue', "a.forgot", function() {
                     view('forgot_password');
                 });
+            }
+        },
+        activate: {
+            title: "Pushcue > account activation",
+            fn: function(obj) {
+                if (!obj || !obj.key || !obj.id)
+                    return view('login');
+
+                pushcue.users.activate(obj, function(err) {
+                    util.nav.set('login', 'Login');
+                    err = err || {success: true};
+                    return util.render('activate_tmpl', err);
+                });
+            }
+        },
+        resend_activation: {
+            title: "Pushcue > resend account activation",
+            fn: function(obj) {
+                util.render('resend_activation_tmpl');
+
+
+                $main.on('submit.pushcue', "form.register", function() {
+                    var data = {
+                        email: $(this).find('.r_email').val(),
+                        path: '#!/activate/{{id}}?key={{reg}}'
+                    };
+
+                    pushcue.users.resendActivation(data, function(err) {
+                        err = err || {success: true};
+                        return util.render('resend_activation_tmpl', err);
+                    });
+                    return false;
+                });
+
             }
         },
         forgot: {
